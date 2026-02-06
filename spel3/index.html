@@ -19,6 +19,7 @@ body {
 .wrapper {
     text-align:center;
     padding:20px;
+    position:relative;
 }
 h1{
     color:#ffd700;
@@ -37,7 +38,7 @@ h1{
     font-size:50px;
     text-align:center;
     transition: transform 0.3s ease;
-    opacity:0;
+    opacity:1;
 }
 .win{
     animation: flash 0.5s ease infinite;
@@ -134,6 +135,7 @@ function initGrid(){
             cell.className="cell";
             cell.dataset.row=r;
             cell.dataset.col=c;
+            cell.textContent=grid[r][c];
             gridEl.appendChild(cell);
         }
     }
@@ -198,7 +200,6 @@ function startSpin(isBonus){
     spinning=true;
     score-=bet; winTextEl.textContent="";
     if(isBonus){bonusBg.classList.add("active");} else{bonusBg.classList.remove("active");}
-    gridEl.querySelectorAll(".cell").forEach(c=>c.textContent="");
 
     dropSymbols(()=>{
         const lines=checkWin();
@@ -220,7 +221,7 @@ function startSpin(isBonus){
         scoreEl.textContent=score;
         spinning=false;
 
-        if(bonusActive && bonusSpinsLeft>0){bonusSpinsLeft--; setTimeout(()=>startSpin(true),600);}
+        if(bonusActive && bonusSpinsLeft>0){bonusSpinsLeft--; setTimeout(()=>startSpin(true),700);}
         else if(bonusActive && bonusSpinsLeft===0){bonusActive=false; bonusBg.classList.remove("active");}
     });
 }
