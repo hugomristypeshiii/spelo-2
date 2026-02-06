@@ -5,6 +5,7 @@
 <title>🏰 Rybergs Slott Deluxe</title>
 
 <style>
+/* ===== BODY CENTER FIX ===== */
 body{
     margin:0;
     font-family:Arial, sans-serif;
@@ -13,85 +14,84 @@ body{
     justify-content:center;
     align-items:center;
     height:100vh;
+    overflow:hidden; /* inga scrollbars */
     color:white;
 }
 
-/* CENTER */
+/* ===== SLOT MACHINE ===== */
 .wrapper{
-    width:520px;
-    padding:50px;
-    border-radius:30px;
+    width:440px;          /* mindre så allt syns */
+    padding:25px;
+    border-radius:22px;
     text-align:center;
     background:#14001d;
-    box-shadow:0 0 120px #ff00ff40;
+    box-shadow:0 0 90px #ff00ff30;
 }
 
 /* TITLE */
 h1{
-    margin:40px 0 30px;
+    margin:8px 0 12px;
+    font-size:22px;
     color:gold;
-    text-shadow:0 0 20px gold;
+    text-shadow:0 0 10px gold;
 }
 
-/* GRID */
+/* ===== GRID ===== */
 #grid{
     display:grid;
-    grid-template-columns:repeat(4,95px);
-    grid-template-rows:repeat(4,95px);
-    gap:12px;
-    margin:30px auto;
+    grid-template-columns:repeat(4,70px); /* mindre rutor */
+    grid-template-rows:repeat(4,70px);
+    gap:8px;
+    margin:12px auto;
 }
 
-/* SYMBOL */
 .cell{
     display:flex;
     justify-content:center;
     align-items:center;
-    font-size:50px;
-    border-radius:18px;
+    font-size:34px;
+    border-radius:12px;
     background:linear-gradient(#2a0035,#120018);
-    transition:transform .3s, opacity .3s;
+    transition:transform .25s, opacity .25s;
 }
 
-/* WIN EXPLOSION */
+/* WIN EFFECT */
 .win{
-    animation:pop .5s forwards;
+    animation:pop .4s forwards;
 }
 @keyframes pop{
-    50%{transform:scale(1.6);opacity:.4}
+    50%{transform:scale(1.4);opacity:.4}
     100%{opacity:0}
 }
 
 /* TEXT */
 .winText{
-    height:40px;
-    font-size:28px;
+    height:26px;
     font-weight:bold;
-}
-
-.mega{
-    animation:mega .6s infinite;
-}
-@keyframes mega{
-    50%{transform:scale(1.25);text-shadow:0 0 35px gold}
+    font-size:18px;
 }
 
 button{
-    padding:12px 24px;
-    margin:6px;
+    padding:8px 14px;
+    margin:4px;
     border:none;
-    border-radius:12px;
+    border-radius:8px;
     font-weight:bold;
     cursor:pointer;
+    font-size:13px;
 }
 
 .spin{background:#00ffe7;}
 .bonus{background:#ff9900;}
 .home{background:#ff5555;}
 
+input{
+    width:80px;
+    padding:4px;
+}
+
 .bonusMode{
-    box-shadow:0 0 160px #ff00ff;
-    background:radial-gradient(circle,#3c0058,#120018);
+    box-shadow:0 0 120px #ff00ff;
 }
 </style>
 </head>
@@ -100,7 +100,7 @@ button{
 
 <div class="wrapper" id="wrapper">
 
-<h1>🏰 Rybergs Slott Deluxe</h1>
+<h1>🏰 Rybergs Slott</h1>
 
 Satsning:
 <input id="betInput" type="number" value="100" min="10" max="1000">
@@ -108,22 +108,27 @@ Satsning:
 <div id="grid"></div>
 
 <div id="winText" class="winText"></div>
-<div id="bonusInfo"></div>
-<div>💰 Jackpot: <span id="jackpot">5000</span> kr</div>
+<div id="bonusInfo" style="font-size:14px"></div>
+
+<div style="font-size:14px">
+💰 Jackpot: <span id="jackpot">5000</span> kr
+</div>
 
 <br>
 
 <button class="spin" onclick="spin()">🎰 Snurra</button>
-<button class="bonus" onclick="buyBonus()">💎 Köp BONUS (10 spins / 200kr)</button>
+<button class="bonus" onclick="buyBonus()">💎 Bonus (10 / 200kr)</button>
 <button class="home" onclick="goHome()">← Tillbaka</button>
 
-<div>Saldo: <span id="money">1000</span> kr</div>
+<div style="margin-top:6px">
+Saldo: <span id="money">1000</span> kr
+</div>
 
 </div>
 
 <script>
 const SIZE=4;
-const symbols=["💎","👑","🍀","⭐","🏰","🔥","🧿"]; // wild + scatter
+const symbols=["💎","👑","🍀","⭐","🏰","🔥"];
 
 let grid=[];
 let money=1000;
@@ -167,54 +172,18 @@ function render(){
     });
 }
 
-/* slower reel animation */
-function animateSpin(speed,done){
-    let start=Date.now();
-
-    function frame(){
-        let t=(Date.now()-start)/speed;
-        gridEl.style.transform=`translateY(${Math.sin(t*10)*25}px)`;
-
-        if(t<1) requestAnimationFrame(frame);
-        else{
-            gridEl.style.transform="translateY(0)";
-            done();
-        }
-    }
-    frame();
-}
-
-/* win check */
 function checkWins(){
     let lines=[];
-
-    for(let r=0;r<SIZE;r++){
-        let row=grid[r];
-        if(row.every(x=>x===row[0]||x==="🔥"))
-            lines.push(row.map((_,i)=>[r,i]));
-    }
+    for(let r=0;r<SIZE;r++)
+        if(new Set(grid[r]).size===1)
+            lines.push(grid[r].map((_,i)=>[r,i]));
 
     for(let c=0;c<SIZE;c++){
         let col=[grid[0][c],grid[1][c],grid[2][c],grid[3][c]];
-        if(col.every(x=>x===col[0]||x==="🔥"))
+        if(new Set(col).size===1)
             lines.push([[0,c],[1,c],[2,c],[3,c]]);
     }
-
     return lines;
-}
-
-/* cascade */
-function cascade(){
-    for(let c=0;c<SIZE;c++){
-        let col=[];
-        for(let r=0;r<SIZE;r++)
-            if(grid[r][c]!="") col.push(grid[r][c]);
-
-        while(col.length<SIZE) col.unshift(rand());
-
-        for(let r=0;r<SIZE;r++)
-            grid[r][c]=col[r];
-    }
 }
 
 function spin(){
@@ -225,96 +194,67 @@ function spin(){
     if(bonusSpins===0){
         if(money<bet) return;
         money-=bet;
-
-        jackpot+=Math.floor(bet*0.1); // progressiv ökning
+        jackpot+=Math.floor(bet*0.1);
     }
 
     spinning=true;
     moneyEl.textContent=money;
     jackpotEl.textContent=jackpot;
 
-    let speed=bonusSpins>0?2400:1800;
+    winText.textContent="";
 
-    animateSpin(speed,()=>{
+    setTimeout(()=>{
+
         for(let r=0;r<SIZE;r++)
             for(let c=0;c<SIZE;c++)
                 grid[r][c]=rand();
 
-        processWins(bet);
-    });
-}
+        render();
 
-function processWins(bet){
-    render();
+        let wins=checkWins();
+        let total=0;
 
-    let wins=checkWins();
-    let total=0;
+        wins.forEach(line=>{
+            let mult=bonusSpins>0
+                ? Math.floor(Math.random()*8)+3
+                : Math.floor(Math.random()*4)+2;
 
-    if(wins.length===0){
-        finishSpin();
-        return;
-    }
+            total+=bet*mult;
 
-    wins.forEach(line=>{
-        let mult=bonusSpins>0
-            ? Math.floor(Math.random()*8)+3 // bättre odds
-            : Math.floor(Math.random()*4)+2;
-
-        let win=bet*mult;
-        total+=win;
-
-        line.forEach(([r,c])=>{
-            grid[r][c]="";
-            document.querySelector(`[data-r='${r}'][data-c='${c}']`).classList.add("win");
+            line.forEach(([r,c])=>{
+                document.querySelector(`[data-r='${r}'][data-c='${c}']`).classList.add("win");
+            });
         });
-    });
 
-    /* JACKPOT CHANS */
-    if(Math.random()<0.01){
-        total+=jackpot;
-        jackpot=5000;
-        winText.textContent="💰 JACKPOT!!!";
-        winText.classList.add("mega");
-    }
-    else if(total>=bet*8){
-        winText.textContent="🎉 MEGA WIN!";
-        winText.classList.add("mega");
-    }
-    else if(total>=bet*4){
-        winText.textContent="✨ BIG WIN!";
-    }
-    else{
-        winText.textContent="WIN!";
-    }
-
-    money+=total;
-    moneyEl.textContent=money;
-    jackpotEl.textContent=jackpot;
-
-    setTimeout(()=>{
-        winText.classList.remove("mega");
-        cascade();
-        processWins(bet);
-    },500);
-}
-
-function finishSpin(){
-    spinning=false;
-
-    if(bonusSpins>0){
-        bonusSpins--;
-        bonusInfo.textContent="BONUS SPINS: "+bonusSpins;
-
-        if(bonusSpins>0)
-            setTimeout(spin,1200);
-        else{
-            wrapper.classList.remove("bonusMode");
-            bonusInfo.textContent="";
+        if(Math.random()<0.01){
+            total+=jackpot;
+            jackpot=5000;
+            winText.textContent="💰 JACKPOT!";
         }
-    }
+        else if(total>=bet*8) winText.textContent="🎉 MEGA WIN!";
+        else if(total>=bet*4) winText.textContent="✨ BIG WIN!";
+        else if(total>0) winText.textContent="WIN!";
+
+        money+=total;
+
+        moneyEl.textContent=money;
+        jackpotEl.textContent=jackpot;
+
+        spinning=false;
+
+        if(bonusSpins>0){
+            bonusSpins--;
+            bonusInfo.textContent="BONUS SPINS: "+bonusSpins;
+            if(bonusSpins>0) setTimeout(spin,900);
+            else{
+                wrapper.classList.remove("bonusMode");
+                bonusInfo.textContent="";
+            }
+        }
+
+    }, bonusSpins>0?1200:800);
 }
 
-/* BONUS = 10 spins för 200kr */
 function buyBonus(){
     if(spinning) return;
     if(money<200) return;
