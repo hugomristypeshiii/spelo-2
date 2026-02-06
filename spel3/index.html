@@ -1,185 +1,223 @@
 <!DOCTYPE html>
 <html lang="sv">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>🏰 Rybergs Slott</title>
-
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🏰 Rybergs Slott 9x9</title>
 <style>
 body{
     margin:0;
-    height:100vh;
+    font-family: Arial, sans-serif;
     background: radial-gradient(circle,#1a0033,#000);
+    color:white;
     display:flex;
     justify-content:center;
     align-items:center;
-    font-family: Arial, sans-serif;
-    color:white;
+    height:100vh;
 }
-
 .wrapper{
     text-align:center;
     background:#111;
-    padding:30px;
-    border-radius:25px;
-    box-shadow:0 0 40px #ff00cc;
+    padding:20px;
+    border-radius:20px;
+    box-shadow:0 0 30px #ff00cc;
 }
-
 h1{
     color:#ffd700;
     text-shadow:0 0 15px #ffd700;
     margin-bottom:10px;
 }
-
-.machine{
-    display:flex;
-    gap:15px;
+#grid{
+    display:grid;
+    grid-template-columns: repeat(9, 50px);
+    grid-template-rows: repeat(9, 50px);
+    gap:5px;
     justify-content:center;
-    margin:25px 0;
+    margin:20px 0;
 }
-
-.reel{
-    width:90px;
-    height:110px;
-    background:#000;
-    border-radius:15px;
-    font-size:55px;
+.cell{
+    width:50px;
+    height:50px;
+    background:#222;
+    border-radius:8px;
     display:flex;
+    justify-content:center;
     align-items:center;
-    justify-content:center;
-    box-shadow: inset 0 0 20px #000, 0 0 15px #00ffe7;
+    font-size:28px;
+    transition: all 0.2s ease;
 }
-
 button{
-    padding:12px 25px;
+    padding:10px 20px;
+    margin:5px;
     border:none;
     border-radius:10px;
     font-weight:bold;
     cursor:pointer;
-    margin:5px;
 }
-
-.spin{ background:#00ffe7; }
-.home{ background:#ff5555; }
-
+.spin{background:#00ffe7;}
+.home{background:#ff5555;}
 .stats{
     margin-top:10px;
-    font-size:18px;
 }
 </style>
 </head>
-
 <body>
-
 <div class="wrapper">
-    <h1>🏰 Rybergs Slott 🎰</h1>
-
-    <div class="machine">
-        <div class="reel" id="r1">🏰</div>
-        <div class="reel" id="r2">🏰</div>
-        <div class="reel" id="r3">🏰</div>
-    </div>
-
+    <h1>🏰 Rybergs Slott 9x9</h1>
+    <div id="grid"></div>
     <button class="spin" onclick="spin()">🎰 Snurra</button>
-    <button class="home" onclick="goHome()">← Startsidan</button>
-
+    <button class="home" onclick="goHome()">← Tillbaka</button>
     <div class="stats">
         Poäng: <span id="score">0</span> |
         Highscore: <span id="highscore">0</span>
     </div>
-
-    <h2 id="result"></h2>
 </div>
 
 <script>
-const symbols = ["🏰","💎","👑","⭐","🗡️","🍀"];
+const gridSize = 9;
+const symbols = ["💎","👑","🍀","⭐","🗡️","🏰"];
+let grid = [];
+const gridEl = document.getElementById("grid");
+const scoreEl = document.getElementById("score");
+const highEl = document.getElementById("highscore");
+let score = 0;
+let highscore = parseInt(localStorage.getItem("slotHigh")) || 0;
+highEl.textContent = highscore;
 
-const r1=document.getElementById("r1");
-const r2=document.getElementById("r2");
-const r3=document.getElementById("r3");
-const result=document.getElementById("result");
-const scoreEl=document.getElementById("score");
-const highscoreEl=document.getElementById("highscore");
+// Initialize grid
+function initGrid(){
+    gridEl.innerHTML="";
+    grid=[];
+    for(let r=0;r<gridSize;r++){
+        grid[r]=[];
+        for(let c=0;c<gridSize;c++){
+            let sym = symbols[Math.floor(Math.random()*symbols.length)];
+            grid[r][c] = sym;
+            const cell = document.createElement("div");
+            cell.className="cell";
+            cell.dataset.row=r;
+            cell.dataset.col=c;
+            cell.textContent="";
+            gridEl.appendChild(cell);
+        }
+    }
+}
 
-let score=0;
-let spinning=false;
+// Animate falling symbols
+function dropSymbols(callback){
+    let maxDrop = 0;
+    for(let c=0;c<gridSize;c++){
+        let col=[]; 
+        for(let r=0;r<gridSize;r++){
+            if(grid[r][c]==="") col.push(r);
+        }
+        if(col.length>maxDrop) maxDrop=col.length;
+    }
+    let step = 0;
+    function stepDrop(){
+        for(let r=gridSize-1;r>=0;r--){
+            for(let c=0;c<gridSize;c++){
+                if(grid[r][c]===""){
+                    // fall from above
+                    for(let rr=r-1;rr>=0;rr--){
+                        if(grid[rr][c]!==""){
+                            grid[r][c]=grid[rr][c];
+                            grid[rr][c]="";
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        renderGrid();
+        step++;
+        if(step<maxDrop+1) requestAnimationFrame(stepDrop);
+        else callback();
+    }
+    stepDrop();
+}
 
-let highscore = parseInt(localStorage.getItem("slottHighscore")) || 0;
-highscoreEl.textContent = highscore;
+function renderGrid(){
+    const cells = document.querySelectorAll(".cell");
+    cells.forEach(cell=>{
+        let r = parseInt(cell.dataset.row);
+        let c = parseInt(cell.dataset.col);
+        cell.textContent = grid[r][c];
+    });
+}
 
+// Check matches (horizontal, vertical, diagonal)
+function checkMatches(){
+    let matches=[];
+    // horizontal
+    for(let r=0;r<gridSize;r++){
+        for(let c=0;c<gridSize-2;c++){
+            if(grid[r][c]!=="" && grid[r][c]===grid[r][c+1] && grid[r][c]===grid[r][c+2]){
+                matches.push([r,c],[r,c+1],[r,c+2]);
+            }
+        }
+    }
+    // vertical
+    for(let c=0;c<gridSize;c++){
+        for(let r=0;r<gridSize-2;r++){
+            if(grid[r][c]!=="" && grid[r][c]===grid[r+1][c] && grid[r][c]===grid[r+2][c]){
+                matches.push([r,c],[r+1,c],[r+2,c]);
+            }
+        }
+    }
+    // diagonal
+    for(let r=0;r<gridSize-2;r++){
+        for(let c=0;c<gridSize-2;c++){
+            if(grid[r][c]!=="" && grid[r][c]===grid[r+1][c+1] && grid[r][c]===grid[r+2][c+2]){
+                matches.push([r,c],[r+1,c+1],[r+2,c+2]);
+            }
+            if(grid[r+2][c]!=="" && grid[r+2][c]===grid[r+1][c+1] && grid[r+2][c]===grid[r][c+2]){
+                matches.push([r+2,c],[r+1,c+1],[r,c+2]);
+            }
+        }
+    }
+    // remove duplicates
+    let unique = matches.map(JSON.stringify)
+                        .filter((v,i,a)=>a.indexOf(v)===i)
+                        .map(JSON.parse);
+    return unique;
+}
 
-// 🎰 SPIN
+// Spin function
 function spin(){
-    if(spinning) return;
-
-    spinning=true;
-    result.textContent="";
-
-    animate(r1, 500);
-    animate(r2, 800);
-    animate(r3, 1100);
+    // Fill empty cells with random symbols
+    for(let r=0;r<gridSize;r++){
+        for(let c=0;c<gridSize;c++){
+            if(grid[r][c]==="") grid[r][c]=symbols[Math.floor(Math.random()*symbols.length)];
+        }
+    }
+    dropSymbols(()=>{
+        let matches = checkMatches();
+        let points = matches.length*10;
+        score+=points;
+        scoreEl.textContent = score;
+        if(score>highscore){
+            highscore=score;
+            highEl.textContent=highscore;
+            localStorage.setItem("slotHigh",highscore);
+        }
+        // Remove matched symbols
+        matches.forEach(([r,c])=>grid[r][c]="");
+        if(matches.length>0){
+            // animate falling again for new symbols
+            setTimeout(spin,200);
+        }
+        renderGrid();
+    });
 }
 
-
-// animation
-function animate(reel, duration){
-    let interval = setInterval(()=>{
-        reel.textContent = symbols[Math.floor(Math.random()*symbols.length)];
-    }, 60);
-
-    setTimeout(()=>{
-        clearInterval(interval);
-        reel.textContent = symbols[Math.floor(Math.random()*symbols.length)];
-        checkFinish();
-    }, duration);
-}
-
-
-// check win
-let finished=0;
-
-function checkFinish(){
-    finished++;
-
-    if(finished<3) return;
-
-    finished=0;
-    spinning=false;
-
-    const a=r1.textContent;
-    const b=r2.textContent;
-    const c=r3.textContent;
-
-    if(a===b && b===c){
-        score += 100;
-        result.textContent="🔥 JACKPOT! +100";
-    }
-    else if(a===b || b===c || a===c){
-        score += 30;
-        result.textContent="✨ Par! +30";
-    }
-    else{
-        score -= 5;
-        result.textContent="😢 Miss! -5";
-    }
-
-    if(score<0) score=0;
-
-    scoreEl.textContent=score;
-
-    if(score>highscore){
-        highscore=score;
-        highscoreEl.textContent=highscore;
-        localStorage.setItem("slottHighscore", highscore);
-    }
-}
-
-
-// ← Gå hem (VIKTIG ../)
 function goHome(){
     window.location.href="../index.html";
 }
-</script>
 
+// Initialize
+initGrid();
+renderGrid();
+</script>
 </body>
 </html>
