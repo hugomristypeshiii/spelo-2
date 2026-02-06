@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🏰 Rybergs Slott 4x4 - Clean & Adjustable Bet</title>
+<title>🏰 Rybergs Slott 4x4 - Bonus Edition</title>
 <style>
 body{
     margin:0;
@@ -56,6 +56,7 @@ button{
 }
 .spin{background:#00ffe7;}
 .home{background:#ff5555;}
+.bonus{background:#ff9900;}
 .stats{
     margin-top:10px;
     font-size:18px;
@@ -90,11 +91,11 @@ input[type=number]{
 
     <div id="grid"></div>
     <div class="winText" id="winText"></div>
-    <button class="spin" onclick="spin()">🎰 Snurra</button>
+    <button class="spin" onclick="spin(false)">🎰 Snurra</button>
+    <button class="bonus" onclick="buyBonus()">💎 Köp Bonus (min 200 kr)</button>
     <button class="home" onclick="goHome()">← Tillbaka</button>
     <div class="stats">
-        Pengar: <span id="score">1000</span> kr |
-        Highscore: <span id="highscore">0</span> kr
+        Pengar: <span id="score">1000</span> kr
     </div>
 </div>
 
@@ -104,13 +105,11 @@ const symbols = ["💎","👑","🍀","⭐","🗡️","🏰"];
 let grid = [];
 const gridEl = document.getElementById("grid");
 const scoreEl = document.getElementById("score");
-const highEl = document.getElementById("highscore");
 const winTextEl = document.getElementById("winText");
 const betInput = document.getElementById("bet");
 let score = 1000;
-let highscore = parseInt(localStorage.getItem("slotHigh")) || score;
-highEl.textContent = highscore;
 let spinning = false;
+let bonusActive = false;
 
 // ===== Init grid =====
 function initGrid(){
@@ -190,7 +189,7 @@ function dropSymbols(callback){
 }
 
 // ===== Spin function =====
-function spin(){
+function spin(isBonus){
     if(spinning) return;
     let bet = parseInt(betInput.value);
     if(isNaN(bet) || bet<10) bet=10;
@@ -220,23 +219,37 @@ function spin(){
                 line.forEach(([r,c])=>{
                     document.querySelector(`.cell[data-row='${r}'][data-col='${c}']`).classList.add("win");
                 });
-                // Multipliers: 3x eller 5x slumpmässigt
-                let multiplier = Math.random()<0.5?3:5;
+                // multiplier
+                let multiplier = isBonus ? (Math.floor(Math.random()*8)+3) : (Math.random()<0.5?3:5);
                 totalWin += bet*multiplier;
             });
+            // Garantivinst: minst 20% av bet om bonus
+            if(isBonus && totalWin<bet*0.2) totalWin = bet*0.2;
+
             score+=totalWin;
-            if(totalWin>=400) winTextEl.textContent="🎉 MEGA WIN!";
-            else if(totalWin>=200) winTextEl.textContent="✨ BIG WIN!";
+
+            if(totalWin>=bet*8) winTextEl.textContent="🎉 MEGA WIN!";
+            else if(totalWin>=bet*4) winTextEl.textContent="✨ BIG WIN!";
             else winTextEl.textContent="🎉 WIN!";
+        } else if(isBonus){
+            // Ingen linje men bonus: ändå 20% garanterat
+            totalWin = bet*0.2;
+            score+=totalWin;
+            winTextEl.textContent="💰 BONUS WIN!";
         }
         scoreEl.textContent=score;
-        if(score>highscore){
-            highscore=score;
-            highEl.textContent=highscore;
-            localStorage.setItem("slotHigh",highscore);
-        }
         spinning=false;
     });
+}
+
+// ===== Buy bonus =====
+function buyBonus(){
+    let bet = parseInt(betInput.value);
+    if(bet<200){
+        alert("Bonus kräver minst 200 kr satsning!");
+        return;
+    }
+    spin(true);
 }
 
 function goHome(){
