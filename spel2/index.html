@@ -261,7 +261,7 @@ function update(){
            p.x + p.w > player.x){
             if(p.type==="doubleShot") powerActive = "doubleShot";
             else if(p.type==="fastShot") shootCooldown = Math.max(0, shootCooldown-5);
-            else if(p.type==="extraShot") maxShots = Math.min(maxShots+1, 6); // max 6 skott
+            else if(p.type==="extraShot") maxShots = Math.min(maxShots+1, 6);
             powerups.splice(i,1);
         }
     });
@@ -302,7 +302,7 @@ function shoot(){
 function gameOver(){ running=false; overlay.style.display="flex"; }
 function restart(){ init(); }
 
-function goHome(){ window.location.href="index.html"; }
+function goHome(){ running=false; window.location.href="index.html"; }
 
 document.addEventListener("keydown", e=>{ keys[e.key]=true; if(e.key===" ") shoot(); });
 document.addEventListener("keyup", e=> keys[e.key]=false);
