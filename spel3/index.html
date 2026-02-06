@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🏰 Rybergs Slott 9x9</title>
+<title>🏰 Rybergs Slott 3x3</title>
 <style>
 body{
     margin:0;
@@ -29,21 +29,21 @@ h1{
 }
 #grid{
     display:grid;
-    grid-template-columns: repeat(9, 50px);
-    grid-template-rows: repeat(9, 50px);
+    grid-template-columns: repeat(3, 70px);
+    grid-template-rows: repeat(3, 70px);
     gap:5px;
     justify-content:center;
     margin:20px 0;
 }
 .cell{
-    width:50px;
-    height:50px;
+    width:70px;
+    height:70px;
     background:#222;
     border-radius:8px;
     display:flex;
     justify-content:center;
     align-items:center;
-    font-size:28px;
+    font-size:36px;
     transition: all 0.2s ease;
 }
 button{
@@ -63,28 +63,28 @@ button{
 </head>
 <body>
 <div class="wrapper">
-    <h1>🏰 Rybergs Slott 9x9</h1>
+    <h1>🏰 Rybergs Slott 3x3</h1>
     <div id="grid"></div>
-    <button class="spin" onclick="spin()">🎰 Snurra</button>
+    <button class="spin" onclick="spin()">🎰 Snurra (Satsa 100 kr)</button>
     <button class="home" onclick="goHome()">← Tillbaka</button>
     <div class="stats">
-        Poäng: <span id="score">0</span> |
-        Highscore: <span id="highscore">0</span>
+        Pengar: <span id="score">1000</span> kr |
+        Highscore: <span id="highscore">0</span> kr
     </div>
 </div>
 
 <script>
-const gridSize = 9;
+const gridSize = 3;
 const symbols = ["💎","👑","🍀","⭐","🗡️","🏰"];
 let grid = [];
 const gridEl = document.getElementById("grid");
 const scoreEl = document.getElementById("score");
 const highEl = document.getElementById("highscore");
-let score = 0;
-let highscore = parseInt(localStorage.getItem("slotHigh")) || 0;
+let score = 1000;
+let highscore = parseInt(localStorage.getItem("slotHigh")) || score;
 highEl.textContent = highscore;
 
-// Initialize grid
+// ===== Init grid =====
 function initGrid(){
     gridEl.innerHTML="";
     grid=[];
@@ -97,46 +97,13 @@ function initGrid(){
             cell.className="cell";
             cell.dataset.row=r;
             cell.dataset.col=c;
-            cell.textContent="";
+            cell.textContent=sym;
             gridEl.appendChild(cell);
         }
     }
 }
 
-// Animate falling symbols
-function dropSymbols(callback){
-    let maxDrop = 0;
-    for(let c=0;c<gridSize;c++){
-        let col=[]; 
-        for(let r=0;r<gridSize;r++){
-            if(grid[r][c]==="") col.push(r);
-        }
-        if(col.length>maxDrop) maxDrop=col.length;
-    }
-    let step = 0;
-    function stepDrop(){
-        for(let r=gridSize-1;r>=0;r--){
-            for(let c=0;c<gridSize;c++){
-                if(grid[r][c]===""){
-                    // fall from above
-                    for(let rr=r-1;rr>=0;rr--){
-                        if(grid[rr][c]!==""){
-                            grid[r][c]=grid[rr][c];
-                            grid[rr][c]="";
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-        renderGrid();
-        step++;
-        if(step<maxDrop+1) requestAnimationFrame(stepDrop);
-        else callback();
-    }
-    stepDrop();
-}
-
+// ===== Render =====
 function renderGrid(){
     const cells = document.querySelectorAll(".cell");
     cells.forEach(cell=>{
@@ -146,76 +113,79 @@ function renderGrid(){
     });
 }
 
-// Check matches (horizontal, vertical, diagonal)
-function checkMatches(){
-    let matches=[];
-    // horizontal
+// ===== Check wins =====
+function checkWin(){
+    let win = false;
+    let lines = [];
+
+    // rows
     for(let r=0;r<gridSize;r++){
-        for(let c=0;c<gridSize-2;c++){
-            if(grid[r][c]!=="" && grid[r][c]===grid[r][c+1] && grid[r][c]===grid[r][c+2]){
-                matches.push([r,c],[r,c+1],[r,c+2]);
-            }
+        if(grid[r][0]===grid[r][1] && grid[r][1]===grid[r][2]){
+            lines.push([[r,0],[r,1],[r,2]]);
+            win = true;
         }
     }
-    // vertical
+
+    // columns
     for(let c=0;c<gridSize;c++){
-        for(let r=0;r<gridSize-2;r++){
-            if(grid[r][c]!=="" && grid[r][c]===grid[r+1][c] && grid[r][c]===grid[r+2][c]){
-                matches.push([r,c],[r+1,c],[r+2,c]);
-            }
+        if(grid[0][c]===grid[1][c] && grid[1][c]===grid[2][c]){
+            lines.push([[0,c],[1,c],[2,c]]);
+            win = true;
         }
     }
-    // diagonal
-    for(let r=0;r<gridSize-2;r++){
-        for(let c=0;c<gridSize-2;c++){
-            if(grid[r][c]!=="" && grid[r][c]===grid[r+1][c+1] && grid[r][c]===grid[r+2][c+2]){
-                matches.push([r,c],[r+1,c+1],[r+2,c+2]);
-            }
-            if(grid[r+2][c]!=="" && grid[r+2][c]===grid[r+1][c+1] && grid[r+2][c]===grid[r][c+2]){
-                matches.push([r+2,c],[r+1,c+1],[r,c+2]);
-            }
-        }
+
+    // diagonals
+    if(grid[0][0]===grid[1][1] && grid[1][1]===grid[2][2]){
+        lines.push([[0,0],[1,1],[2,2]]);
+        win = true;
     }
-    // remove duplicates
-    let unique = matches.map(JSON.stringify)
-                        .filter((v,i,a)=>a.indexOf(v)===i)
-                        .map(JSON.parse);
-    return unique;
+    if(grid[0][2]===grid[1][1] && grid[1][1]===grid[2][0]){
+        lines.push([[0,2],[1,1],[2,0]]);
+        win = true;
+    }
+
+    return {win, lines};
 }
 
-// Spin function
+// ===== Spin =====
 function spin(){
-    // Fill empty cells with random symbols
+    if(score<100){
+        alert("Inte tillräckligt med pengar!");
+        return;
+    }
+    score -= 100; // satsa 100 kr
+
+    // fyll grid med nya symboler
     for(let r=0;r<gridSize;r++){
         for(let c=0;c<gridSize;c++){
-            if(grid[r][c]==="") grid[r][c]=symbols[Math.floor(Math.random()*symbols.length)];
+            grid[r][c] = symbols[Math.floor(Math.random()*symbols.length)];
         }
     }
-    dropSymbols(()=>{
-        let matches = checkMatches();
-        let points = matches.length*10;
-        score+=points;
-        scoreEl.textContent = score;
-        if(score>highscore){
-            highscore=score;
-            highEl.textContent=highscore;
-            localStorage.setItem("slotHigh",highscore);
-        }
-        // Remove matched symbols
-        matches.forEach(([r,c])=>grid[r][c]="");
-        if(matches.length>0){
-            // animate falling again for new symbols
-            setTimeout(spin,200);
-        }
-        renderGrid();
-    });
+    renderGrid();
+
+    // Check wins
+    const result = checkWin();
+    if(result.win){
+        // Poäng = satsning * multiplikator
+        let multiplier = Math.floor(Math.random()*5)+2; // 2x-6x
+        let winAmount = 100 * multiplier;
+        score += winAmount;
+        alert(`🎉 Du vann ${winAmount} kr!`);
+    }
+    scoreEl.textContent = score;
+
+    if(score>highscore){
+        highscore = score;
+        highEl.textContent = highscore;
+        localStorage.setItem("slotHigh",highscore);
+    }
 }
 
 function goHome(){
     window.location.href="../index.html";
 }
 
-// Initialize
+// ===== Start =====
 initGrid();
 renderGrid();
 </script>
