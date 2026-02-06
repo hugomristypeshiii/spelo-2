@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>🏰 Rybergs Slott</title>
+
+<style>
+body{
+    margin:0;
+    height:100vh;
+    background: radial-gradient(circle,#1a0033,#000);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-family: Arial, sans-serif;
+    color:white;
+}
+
+.wrapper{
+    text-align:center;
+    background:#111;
+    padding:30px;
+    border-radius:25px;
+    box-shadow:0 0 40px #ff00cc;
+}
+
+h1{
+    color:#ffd700;
+    text-shadow:0 0 15px #ffd700;
+    margin-bottom:10px;
+}
+
+.machine{
+    display:flex;
+    gap:15px;
+    justify-content:center;
+    margin:25px 0;
+}
+
+.reel{
+    width:90px;
+    height:110px;
+    background:#000;
+    border-radius:15px;
+    font-size:55px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow: inset 0 0 20px #000, 0 0 15px #00ffe7;
+}
+
+button{
+    padding:12px 25px;
+    border:none;
+    border-radius:10px;
+    font-weight:bold;
+    cursor:pointer;
+    margin:5px;
+}
+
+.spin{ background:#00ffe7; }
+.home{ background:#ff5555; }
+
+.stats{
+    margin-top:10px;
+    font-size:18px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="wrapper">
+    <h1>🏰 Rybergs Slott 🎰</h1>
+
+    <div class="machine">
+        <div class="reel" id="r1">🏰</div>
+        <div class="reel" id="r2">🏰</div>
+        <div class="reel" id="r3">🏰</div>
+    </div>
+
+    <button class="spin" onclick="spin()">🎰 Snurra</button>
+    <button class="home" onclick="goHome()">← Startsidan</button>
+
+    <div class="stats">
+        Poäng: <span id="score">0</span> |
+        Highscore: <span id="highscore">0</span>
+    </div>
+
+    <h2 id="result"></h2>
+</div>
+
+<script>
+const symbols = ["🏰","💎","👑","⭐","🗡️","🍀"];
+
+const r1=document.getElementById("r1");
+const r2=document.getElementById("r2");
+const r3=document.getElementById("r3");
+const result=document.getElementById("result");
+const scoreEl=document.getElementById("score");
+const highscoreEl=document.getElementById("highscore");
+
+let score=0;
+let spinning=false;
+
+let highscore = parseInt(localStorage.getItem("slottHighscore")) || 0;
+highscoreEl.textContent = highscore;
+
+
+// 🎰 SPIN
+function spin(){
+    if(spinning) return;
+
+    spinning=true;
+    result.textContent="";
+
+    animate(r1, 500);
+    animate(r2, 800);
+    animate(r3, 1100);
+}
+
+
+// animation
+function animate(reel, duration){
+    let interval = setInterval(()=>{
+        reel.textContent = symbols[Math.floor(Math.random()*symbols.length)];
+    }, 60);
+
+    setTimeout(()=>{
+        clearInterval(interval);
+        reel.textContent = symbols[Math.floor(Math.random()*symbols.length)];
+        checkFinish();
+    }, duration);
+}
+
+
+// check win
+let finished=0;
+
+function checkFinish(){
+    finished++;
+
+    if(finished<3) return;
+
+    finished=0;
+    spinning=false;
+
+    const a=r1.textContent;
+    const b=r2.textContent;
+    const c=r3.textContent;
+
+    if(a===b && b===c){
+        score += 100;
+        result.textContent="🔥 JACKPOT! +100";
+    }
+    else if(a===b || b===c || a===c){
+        score += 30;
+        result.textContent="✨ Par! +30";
+    }
+    else{
+        score -= 5;
+        result.textContent="😢 Miss! -5";
+    }
+
+    if(score<0) score=0;
+
+    scoreEl.textContent=score;
+
+    if(score>highscore){
+        highscore=score;
+        highscoreEl.textContent=highscore;
+        localStorage.setItem("slottHighscore", highscore);
+    }
+}
+
+
+// ← Gå hem (VIKTIG ../)
+function goHome(){
+    window.location.href="../index.html";
+}
+</script>
+
+</body>
+</html>
