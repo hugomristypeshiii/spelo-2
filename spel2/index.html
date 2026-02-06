@@ -100,7 +100,7 @@ function init(){
     running = true;
     shootCooldown = 0;
     powerActive = false;
-    difficulty = 700; // spawnintervall i ms
+    difficulty = 1000; // längre intervall = färre asteroider
     scoreEl.textContent = score;
     livesEl.textContent = lives;
     overlay.style.display="none";
@@ -114,7 +114,7 @@ function spawnAsteroid(){
         y: -size,
         w: size,
         h: size,
-        speed: 1 + Math.random()*2 + score/200, // svårare ju mer poäng
+        speed: 1 + Math.random()*1.5 + score/400, // långsammare ökning
         rotation: Math.random()*Math.PI*2,
         rotationSpeed: (Math.random()-0.5)*0.03
     });
@@ -186,19 +186,15 @@ function drawPowerup(p){
 function update(){
     if(!running) return;
 
-    // player move
     if(keys["ArrowLeft"] || keys["a"]) player.x -= player.speed;
     if(keys["ArrowRight"] || keys["d"]) player.x += player.speed;
     player.x = Math.max(0,Math.min(canvas.width-player.w,player.x));
 
-    // bullets
     bullets.forEach(b=>b.y -=8);
     bullets = bullets.filter(b=>b.y>-20);
 
-    // asteroids
     asteroids.forEach(a=> a.y += a.speed);
 
-    // bullets -> asteroids
     bullets.forEach((b, bi)=>{
         asteroids.forEach((a, ai)=>{
             if(b.x < a.x + a.w && b.x + b.w > a.x &&
@@ -207,14 +203,13 @@ function update(){
                 bullets.splice(bi,1);
                 score += 10;
                 scoreEl.textContent = score;
-                if(score % 50 === 0 && difficulty > 300){
-                    difficulty -= 20; // svårare ju mer poäng
+                if(score % 100 === 0 && difficulty > 400){
+                    difficulty -= 30; // svårare långsammare
                 }
             }
         });
     });
 
-    // asteroids -> player
     asteroids.forEach((a,i)=>{
         if(a.y + a.h > player.y &&
            a.x < player.x + player.w &&
@@ -227,9 +222,7 @@ function update(){
     });
     asteroids = asteroids.filter(a => a.y < canvas.height + 50);
 
-    // powerups
     powerups.forEach(p=> p.y += p.speed);
-    // player collect powerup
     powerups.forEach((p,i)=>{
         if(p.y + p.h > player.y &&
            p.x < player.x + player.w &&
@@ -284,9 +277,7 @@ function gameOver(){
     overlay.style.display="flex";
 }
 
-function restart(){
-    init();
-}
+function restart(){init();}
 
 // ------------------- INPUT -------------------
 document.addEventListener("keydown", e=>{
@@ -297,7 +288,7 @@ document.addEventListener("keyup", e=> keys[e.key]=false);
 
 // ------------------- SPAWN INTERVALL -------------------
 setInterval(()=>spawnAsteroid(), difficulty);
-setInterval(()=>{ if(Math.random()<0.3) spawnPowerup(); }, 5000);
+setInterval(()=>{ if(Math.random()<0.3) spawnPowerup(); }, 6000);
 
 init();
 loop();
