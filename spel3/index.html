@@ -7,8 +7,8 @@
 <style>
 body{
     margin:0;
-    font-family:Arial;
     background:radial-gradient(circle,#140022,#000);
+    font-family:Arial;
     color:white;
     display:flex;
     justify-content:center;
@@ -47,17 +47,16 @@ h1{
     font-size:46px;
     border-radius:14px;
     background:linear-gradient(#2b003b,#150020);
-    transition:all .15s;
+    transition:transform .2s ease, opacity .2s;
 }
 
 .win{
-    animation:pop .35s ease infinite;
+    animation:flash .35s infinite;
 }
-@keyframes pop{
+@keyframes flash{
     50%{transform:scale(1.2); box-shadow:0 0 25px gold;}
 }
 
-/* BUTTONS */
 button{
     padding:10px 20px;
     margin:6px;
@@ -71,33 +70,16 @@ button{
 .bonus{background:#ff9900;}
 .home{background:#ff5555;}
 
-.winText{
-    height:32px;
-    font-size:24px;
-    color:#ffe600;
-    margin:6px;
-}
+.winText{height:30px;color:#ffe600;font-size:22px;}
+.multText{height:22px;color:#ff80ff;}
+.bonusInfo{height:22px;color:#ff66ff;font-weight:bold;}
 
-.multText{
-    height:22px;
-    color:#ff80ff;
-    font-size:16px;
-}
-
-.bonusInfo{
-    height:22px;
-    color:#ff66ff;
-    font-weight:bold;
-}
-
-/* BONUS MODE */
 .bonusMode{
     background:radial-gradient(circle,#3b0057,#110011);
     box-shadow:0 0 90px #ff00ff;
 }
 </style>
 </head>
-
 <body>
 
 <div class="wrapper" id="wrapper">
@@ -139,13 +121,13 @@ const wrapper=document.getElementById("wrapper");
 const betInput=document.getElementById("betInput");
 
 
-// INIT GRID
+// ---------- INIT ----------
 function createGrid(){
     gridEl.innerHTML="";
     for(let r=0;r<SIZE;r++){
         grid[r]=[];
         for(let c=0;c<SIZE;c++){
-            const d=document.createElement("div");
+            let d=document.createElement("div");
             d.className="cell";
             d.dataset.r=r;
             d.dataset.c=c;
@@ -166,11 +148,35 @@ function render(){
         let c=cell.dataset.c;
         cell.textContent=grid[r][c];
         cell.classList.remove("win");
+        cell.style.opacity=1;
+        cell.style.transform="translateY(0)";
     });
 }
 
 
-// CHECK WINS
+// ---------- REEL SPIN ANIMATION ----------
+function animateSpin(duration, done){
+    let cells=document.querySelectorAll(".cell");
+    let start=Date.now();
+
+    function frame(){
+        let t=(Date.now()-start)/duration;
+
+        cells.forEach(c=>{
+            c.style.transform=`translateY(${Math.sin(t*15)*20}px)`;
+        });
+
+        if(t<1) requestAnimationFrame(frame);
+        else{
+            cells.forEach(c=>c.style.transform="translateY(0)");
+            done();
+        }
+    }
+    frame();
+}
+
+
+// ---------- WIN CHECK ----------
 function checkWins(){
     let lines=[];
     for(let r=0;r<SIZE;r++)
@@ -186,94 +192,126 @@ function checkWins(){
 }
 
 
-// SPIN
+// ---------- CASCADE ----------
+function cascade(){
+    for(let c=0;c<SIZE;c++){
+        let col=[];
+        for(let r=0;r<SIZE;r++)
+            if(grid[r][c]!="") col.push(grid[r][c]);
+
+        while(col.length<SIZE) col.unshift(rand());
+
+        for(let r=0;r<SIZE;r++)
+            grid[r][c]=col[r];
+    }
+}
+
+
+// ---------- SPIN ----------
 function spin(){
+
     if(spinning) return;
+    spinning=true;
 
     let bet=parseInt(betInput.value)||100;
-    if(money<bet) return;
-
-    spinning=true;
+    if(money<bet){ spinning=false; return; }
 
     money-=bet;
     moneyEl.textContent=money;
 
-    winText.textContent="";
-    multText.textContent="";
+    let spinSpeed = bonusSpins>0 ? 1600 : 1100;
 
-    for(let r=0;r<SIZE;r++)
-        for(let c=0;c<SIZE;c++)
-            grid[r][c]=rand();
+    animateSpin(spinSpeed,()=>{
 
-    render();
+        for(let r=0;r<SIZE;r++)
+            for(let c=0;c<SIZE;c++)
+                grid[r][c]=rand();
 
-    setTimeout(()=>{
-
-        let wins=checkWins();
-        let totalWin=0;
-        let mults=[];
-
-        wins.forEach(line=>{
-            let mult = bonusSpins>0
-                ? Math.floor(Math.random()*8)+3
-                : Math.floor(Math.random()*4)+2;
-
-            mults.push("x"+mult);
-            totalWin+=bet*mult;
-
-            line.forEach(([r,c])=>{
-                document.querySelector(`[data-r='${r}'][data-c='${c}']`).classList.add("win");
-            });
-        });
-
-        if(bonusSpins>0 && totalWin<bet*0.2)
-            totalWin=bet*0.2;
-
-        money+=totalWin;
-        moneyEl.textContent=money;
-
-        multText.textContent = mults.join("   ");
-
-        if(totalWin>=bet*8) winText.textContent="🎉 MEGA WIN!";
-        else if(totalWin>=bet*4) winText.textContent="✨ BIG WIN!";
-        else if(totalWin>0) winText.textContent="WIN!";
-
-        spinning=false;
-
-        if(bonusSpins>0){
-            bonusSpins--;
-            bonusInfo.textContent="BONUS: "+bonusSpins+" spins kvar";
-
-            if(bonusSpins>0)
-                setTimeout(spin,600);
-            else{
-                wrapper.classList.remove("bonusMode");
-                bonusInfo.textContent="";
-            }
-        }
-
-    },200);
+        processWins(bet);
+    });
 }
 
 
-// BONUS
+// ---------- WIN PROCESS ----------
+function processWins(bet){
+
+    render();
+
+    let wins=checkWins();
+    let totalWin=0;
+    let mults=[];
+
+    if(wins.length===0){
+        finishSpin();
+        return;
+    }
+
+    wins.forEach(line=>{
+        let mult = bonusSpins>0
+            ? Math.floor(Math.random()*8)+3
+            : Math.floor(Math.random()*4)+2;
+
+        mults.push("x"+mult);
+        totalWin+=bet*mult;
+
+        line.forEach(([r,c])=>{
+            grid[r][c]="";
+            document.querySelector(`[data-r='${r}'][data-c='${c}']`).classList.add("win");
+        });
+    });
+
+    if(bonusSpins>0 && totalWin<bet*0.2)
+        totalWin=bet*0.2;
+
+    money+=totalWin;
+    moneyEl.textContent=money;
+
+    winText.textContent = totalWin>=bet*8 ? "🎉 MEGA WIN!" :
+                           totalWin>=bet*4 ? "✨ BIG WIN!" : "WIN!";
+
+    multText.textContent=mults.join("  ");
+
+    setTimeout(()=>{
+        cascade();
+        processWins(bet);
+    },400);
+}
+
+
+// ---------- FINISH ----------
+function finishSpin(){
+    spinning=false;
+
+    if(bonusSpins>0){
+        bonusSpins--;
+        bonusInfo.textContent="BONUS: "+bonusSpins+" kvar";
+
+        if(bonusSpins>0)
+            setTimeout(spin,900);
+        else{
+            wrapper.classList.remove("bonusMode");
+            bonusInfo.textContent="";
+        }
+    }
+}
+
+
+// ---------- BONUS ----------
 function buyBonus(){
     let bet=parseInt(betInput.value)||100;
-
     if(bet<200) return;
 
     bonusSpins=10;
     wrapper.classList.add("bonusMode");
-    bonusInfo.textContent="BONUS: 10 spins kvar";
+    bonusInfo.textContent="BONUS: 10 kvar";
     spin();
 }
 
 
-// NAV
+// ---------- NAV ----------
 function goHome(){
     window.location.href="../index.html";
 }
-
 
 createGrid();
 </script>
