@@ -2,13 +2,13 @@
 <html lang="sv">
 <head>
 <meta charset="UTF-8">
-<title>Rybergs Slott Deluxe</title>
+<title>🏰 Rybergs Slott Deluxe</title>
 
 <style>
 body{
     margin:0;
-    font-family:Arial;
-    background:radial-gradient(circle,#140022,#000);
+    font-family:Arial, sans-serif;
+    background:radial-gradient(circle,#160022,#000);
     display:flex;
     justify-content:center;
     align-items:center;
@@ -16,30 +16,30 @@ body{
     color:white;
 }
 
-/* PERFEKT CENTER */
+/* CENTER */
 .wrapper{
-    width:460px;
-    padding:45px;
-    border-radius:28px;
+    width:520px;
+    padding:50px;
+    border-radius:30px;
     text-align:center;
     background:#14001d;
-    box-shadow:0 0 90px #ff00ff40;
+    box-shadow:0 0 120px #ff00ff40;
 }
 
 /* TITLE */
 h1{
-    margin:20px 0 30px;
+    margin:40px 0 30px;
     color:gold;
-    text-shadow:0 0 15px gold;
+    text-shadow:0 0 20px gold;
 }
 
 /* GRID */
 #grid{
     display:grid;
-    grid-template-columns:repeat(4,85px);
-    grid-template-rows:repeat(4,85px);
+    grid-template-columns:repeat(4,95px);
+    grid-template-rows:repeat(4,95px);
     gap:12px;
-    margin:25px auto;
+    margin:30px auto;
 }
 
 /* SYMBOL */
@@ -47,26 +47,25 @@ h1{
     display:flex;
     justify-content:center;
     align-items:center;
-    font-size:48px;
-    border-radius:16px;
-    background:linear-gradient(#2b003b,#160022);
-    transition:transform .2s, opacity .2s;
+    font-size:50px;
+    border-radius:18px;
+    background:linear-gradient(#2a0035,#120018);
+    transition:transform .3s, opacity .3s;
 }
 
-/* EXPLOSION */
+/* WIN EXPLOSION */
 .win{
-    animation:explode .45s ease forwards;
+    animation:pop .5s forwards;
 }
-@keyframes explode{
-    0%{transform:scale(1);}
-    50%{transform:scale(1.5); opacity:.3;}
-    100%{opacity:0;}
+@keyframes pop{
+    50%{transform:scale(1.6);opacity:.4}
+    100%{opacity:0}
 }
 
-/* BIG WIN TEXT */
+/* TEXT */
 .winText{
-    height:36px;
-    font-size:26px;
+    height:40px;
+    font-size:28px;
     font-weight:bold;
 }
 
@@ -74,15 +73,14 @@ h1{
     animation:mega .6s infinite;
 }
 @keyframes mega{
-    50%{transform:scale(1.2); text-shadow:0 0 30px gold;}
+    50%{transform:scale(1.25);text-shadow:0 0 35px gold}
 }
 
-/* BUTTONS */
 button{
-    padding:10px 20px;
+    padding:12px 24px;
     margin:6px;
     border:none;
-    border-radius:10px;
+    border-radius:12px;
     font-weight:bold;
     cursor:pointer;
 }
@@ -92,8 +90,8 @@ button{
 .home{background:#ff5555;}
 
 .bonusMode{
-    box-shadow:0 0 120px #ff00ff;
-    background:radial-gradient(circle,#3a0057,#110011);
+    box-shadow:0 0 160px #ff00ff;
+    background:radial-gradient(circle,#3c0058,#120018);
 }
 </style>
 </head>
@@ -110,11 +108,13 @@ Satsning:
 <div id="grid"></div>
 
 <div id="winText" class="winText"></div>
-<div id="multText"></div>
 <div id="bonusInfo"></div>
+<div>💰 Jackpot: <span id="jackpot">5000</span> kr</div>
+
+<br>
 
 <button class="spin" onclick="spin()">🎰 Snurra</button>
-<button class="bonus" onclick="buyBonus()">💎 Köp Bonus</button>
+<button class="bonus" onclick="buyBonus()">💎 Köp BONUS (10 spins / 200kr)</button>
 <button class="home" onclick="goHome()">← Tillbaka</button>
 
 <div>Saldo: <span id="money">1000</span> kr</div>
@@ -123,17 +123,19 @@ Satsning:
 
 <script>
 const SIZE=4;
-const symbols=["💎","👑","🍀","⭐","🏰","🔥","🧿"]; // 🔥 wild, 🧿 scatter
+const symbols=["💎","👑","🍀","⭐","🏰","🔥","🧿"]; // wild + scatter
 
 let grid=[];
 let money=1000;
+let jackpot=5000;
+
 let spinning=false;
 let bonusSpins=0;
 
 const gridEl=document.getElementById("grid");
 const moneyEl=document.getElementById("money");
+const jackpotEl=document.getElementById("jackpot");
 const winText=document.getElementById("winText");
-const multText=document.getElementById("multText");
 const bonusInfo=document.getElementById("bonusInfo");
 const wrapper=document.getElementById("wrapper");
 const betInput=document.getElementById("betInput");
@@ -165,23 +167,24 @@ function render(){
     });
 }
 
-/* reel animation */
+/* slower reel animation */
 function animateSpin(speed,done){
-    let cells=document.querySelectorAll(".cell");
     let start=Date.now();
 
     function frame(){
         let t=(Date.now()-start)/speed;
-        cells.forEach(c=>c.style.transform=`translateY(${Math.sin(t*12)*22}px)`);
+        gridEl.style.transform=`translateY(${Math.sin(t*10)*25}px)`;
+
         if(t<1) requestAnimationFrame(frame);
         else{
-            cells.forEach(c=>c.style.transform="translateY(0)");
+            gridEl.style.transform="translateY(0)";
             done();
         }
     }
     frame();
 }
 
+/* win check */
 function checkWins(){
     let lines=[];
 
@@ -200,26 +203,37 @@ function checkWins(){
     return lines;
 }
 
+/* cascade */
 function cascade(){
     for(let c=0;c<SIZE;c++){
         let col=[];
-        for(let r=0;r<SIZE;r++) if(grid[r][c]!="") col.push(grid[r][c]);
+        for(let r=0;r<SIZE;r++)
+            if(grid[r][c]!="") col.push(grid[r][c]);
+
         while(col.length<SIZE) col.unshift(rand());
-        for(let r=0;r<SIZE;r++) grid[r][c]=col[r];
+
+        for(let r=0;r<SIZE;r++)
+            grid[r][c]=col[r];
     }
 }
 
 function spin(){
     if(spinning) return;
-    spinning=true;
 
     let bet=parseInt(betInput.value)||100;
-    if(money<bet){ spinning=false; return; }
 
-    money-=bet;
+    if(bonusSpins===0){
+        if(money<bet) return;
+        money-=bet;
+
+        jackpot+=Math.floor(bet*0.1); // progressiv ökning
+    }
+
+    spinning=true;
     moneyEl.textContent=money;
+    jackpotEl.textContent=jackpot;
 
-    let speed=bonusSpins>0?1800:1200;
+    let speed=bonusSpins>0?2400:1800;
 
     animateSpin(speed,()=>{
         for(let r=0;r<SIZE;r++)
@@ -234,22 +248,20 @@ function processWins(bet){
     render();
 
     let wins=checkWins();
-    let scatters=grid.flat().filter(x=>x==="🧿").length;
-
-    if(scatters>=3 && bonusSpins===0){
-        bonusSpins=10;
-        wrapper.classList.add("bonusMode");
-    }
+    let total=0;
 
     if(wins.length===0){
         finishSpin();
         return;
     }
 
-    let total=0;
     wins.forEach(line=>{
-        let mult=bonusSpins>0?Math.floor(Math.random()*8)+3:Math.floor(Math.random()*4)+2;
-        total+=bet*mult;
+        let mult=bonusSpins>0
+            ? Math.floor(Math.random()*8)+3 // bättre odds
+            : Math.floor(Math.random()*4)+2;
+
+        let win=bet*mult;
+        total+=win;
 
         line.forEach(([r,c])=>{
             grid[r][c]="";
@@ -257,15 +269,27 @@ function processWins(bet){
         });
     });
 
-    money+=total;
-    moneyEl.textContent=money;
-
-    if(total>=bet*8){
+    /* JACKPOT CHANS */
+    if(Math.random()<0.01){
+        total+=jackpot;
+        jackpot=5000;
+        winText.textContent="💰 JACKPOT!!!";
+        winText.classList.add("mega");
+    }
+    else if(total>=bet*8){
         winText.textContent="🎉 MEGA WIN!";
         winText.classList.add("mega");
     }
-    else if(total>=bet*4) winText.textContent="✨ BIG WIN!";
-    else winText.textContent="WIN!";
+    else if(total>=bet*4){
+        winText.textContent="✨ BIG WIN!";
+    }
+    else{
+        winText.textContent="WIN!";
+    }
+
+    money+=total;
+    moneyEl.textContent=money;
+    jackpotEl.textContent=jackpot;
 
     setTimeout(()=>{
         winText.classList.remove("mega");
@@ -279,8 +303,10 @@ function finishSpin(){
 
     if(bonusSpins>0){
         bonusSpins--;
-        bonusInfo.textContent="BONUS: "+bonusSpins+" kvar";
-        if(bonusSpins>0) setTimeout(spin,1000);
+        bonusInfo.textContent="BONUS SPINS: "+bonusSpins;
+
+        if(bonusSpins>0)
+            setTimeout(spin,1200);
         else{
             wrapper.classList.remove("bonusMode");
             bonusInfo.textContent="";
@@ -288,11 +314,17 @@ function finishSpin(){
     }
 }
 
+/* BONUS = 10 spins för 200kr */
 function buyBonus(){
-    let bet=parseInt(betInput.value)||100;
-    if(bet<200) return;
+    if(spinning) return;
+    if(money<200) return;
+
+    money-=200;
     bonusSpins=10;
+
     wrapper.classList.add("bonusMode");
+    moneyEl.textContent=money;
+
     spin();
 }
 
