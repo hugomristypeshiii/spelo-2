@@ -8,7 +8,7 @@
 <style>
 body {
     margin: 0;
-    background: radial-gradient(circle at center, #0c0c18, #05050d);
+    background: radial-gradient(circle, #0c0c18, #05050d);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -17,7 +17,9 @@ body {
     color: white;
 }
 
+/* wrapper */
 .wrapper {
+    position: relative;
     text-align: center;
 }
 
@@ -27,14 +29,45 @@ h1 {
     margin-bottom: 10px;
 }
 
+/* 🔥 MINDRE BANA */
 canvas {
     background: #0f0f1f;
     border-radius: 20px;
     box-shadow: 0 0 40px #00ffe7;
 }
 
+/* score */
 .score {
     margin-bottom: 10px;
+}
+
+/* 🔥 GAME OVER OVERLAY */
+.overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border-radius: 20px;
+}
+
+.overlay h2 {
+    font-size: 2.5rem;
+    color: #ff2e88;
+    text-shadow: 0 0 20px #ff2e88;
+    margin-bottom: 20px;
+}
+
+button {
+    padding: 12px 25px;
+    font-size: 1rem;
+    border-radius: 12px;
+    border: none;
+    background: #00ffe7;
+    cursor: pointer;
+    font-weight: bold;
 }
 </style>
 </head>
@@ -43,10 +76,15 @@ canvas {
 
 <div class="wrapper">
     <h1>🐍 Neon Serpent</h1>
-    <div class="score">
-        Score: <span id="score">0</span>
+    <div class="score">Score: <span id="score">0</span></div>
+
+    <!-- mindre canvas -->
+    <canvas id="game" width="420" height="420"></canvas>
+
+    <div class="overlay" id="overlay">
+        <h2>💀 GAME OVER</h2>
+        <button onclick="restart()">Spela igen</button>
     </div>
-    <canvas id="game" width="600" height="600"></canvas>
 </div>
 
 <script>
@@ -56,19 +94,28 @@ const ctx = canvas.getContext("2d");
 const size = 20;
 const tileCount = canvas.width / size;
 
-let snake = [
-    {x: 15, y: 15},
-    {x: 14, y: 15},
-    {x: 13, y: 15}
-];
-
-let dx = 1, dy = 0;
-let food = randomFood();
-let score = 0;
+let snake, dx, dy, food, score;
+let running = true;
 
 const scoreEl = document.getElementById("score");
+const overlay = document.getElementById("overlay");
 
-function randomFood() {
+function init(){
+    snake = [
+        {x:10,y:10},
+        {x:9,y:10},
+        {x:8,y:10}
+    ];
+    dx = 1;
+    dy = 0;
+    food = randomFood();
+    score = 0;
+    scoreEl.textContent = 0;
+    overlay.style.display = "none";
+    running = true;
+}
+
+function randomFood(){
     return {
         x: Math.floor(Math.random()*tileCount),
         y: Math.floor(Math.random()*tileCount)
@@ -76,6 +123,7 @@ function randomFood() {
 }
 
 function gameLoop(){
+    if(!running) return;
     update();
     draw();
 }
@@ -86,11 +134,11 @@ function update(){
         y: (snake[0].y + dy + tileCount) % tileCount
     };
 
-    // krock
+    // krock med sig själv
     for(let s of snake){
         if(s.x === head.x && s.y === head.y){
-            alert("Game Over 🐍");
-            location.reload();
+            gameOver();
+            return;
         }
     }
 
@@ -116,45 +164,49 @@ function drawCircle(x,y,r,color,glow=0){
 }
 
 function draw(){
-    ctx.fillStyle = "#0f0f1f";
+    ctx.fillStyle="#0f0f1f";
     ctx.fillRect(0,0,canvas.width,canvas.height);
 
-    // MAT (rund)
-    drawCircle(
-        food.x*size+size/2,
-        food.y*size+size/2,
-        size/3,
-        "#ff2e88",
-        20
-    );
+    // mat
+    drawCircle(food.x*size+size/2, food.y*size+size/2, size/3, "#ff2e88", 20);
 
-    // ORMEN
+    // orm
     snake.forEach((part,i)=>{
-        const x = part.x*size+size/2;
-        const y = part.y*size+size/2;
-
-        const hue = 140 + i*5;
-        const color = `hsl(${hue}, 100%, 50%)`;
-
-        drawCircle(x,y,size/2.2,color,15);
+        const hue = 140 + i*6;
+        drawCircle(
+            part.x*size+size/2,
+            part.y*size+size/2,
+            size/2.2,
+            `hsl(${hue},100%,50%)`,
+            12
+        );
     });
 
-    // ÖGON på huvudet
+    // ögon
     const head = snake[0];
     const hx = head.x*size+size/2;
     const hy = head.y*size+size/2;
+    drawCircle(hx-4,hy-3,3,"white");
+    drawCircle(hx+4,hy-3,3,"white");
+}
 
-    drawCircle(hx-4, hy-3, 3, "white");
-    drawCircle(hx+4, hy-3, 3, "white");
+function gameOver(){
+    running = false;
+    overlay.style.display = "flex";
+}
+
+function restart(){
+    init();
 }
 
 document.addEventListener("keydown", e=>{
     if(e.key==="ArrowUp" && dy!==1){dx=0;dy=-1;}
-    if(e.key==="ArrowDown" && dy!==- +1){dx=0;dy=1;}
+    if(e.key==="ArrowDown" && dy!==-1){dx=0;dy=1;}
     if(e.key==="ArrowLeft" && dx!==1){dx=-1;dy=0;}
     if(e.key==="ArrowRight" && dx!==-1){dx=1;dy=0;}
 });
 
+init();
 setInterval(gameLoop, 90);
 </script>
 
