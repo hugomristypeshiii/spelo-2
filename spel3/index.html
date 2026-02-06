@@ -1,186 +1,307 @@
 <!DOCTYPE html>
 <html lang="sv">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🏰 Rybergs Slott - Slot</title>
+<meta charset="UTF-8" />
+<title>🏰 Rybergs Slott Deluxe</title>
+
 <style>
-body{margin:0;font-family:Arial;background:radial-gradient(circle,#0a0015,#000);color:white;display:flex;justify-content:center;align-items:center;height:100vh;}
-.wrapper{text-align:center;padding:20px;position:relative;}
-h1{color:#ffd700;text-shadow:0 0 15px #ffd700;}
-#grid{display:grid;grid-template-columns:repeat(4,80px);grid-template-rows:repeat(4,80px);gap:15px;justify-content:center;margin:20px 0;position:relative;}
-.cell{font-size:50px;text-align:center;transition:transform 0.3s ease;opacity:1;}
-.win{animation: flash 0.5s ease infinite;}
-@keyframes flash{0%,100%{text-shadow:none;}50%{text-shadow:0 0 15px gold;}}
-button{padding:10px 20px;margin:5px;border:none;border-radius:10px;font-weight:bold;cursor:pointer;}
+body{
+    margin:0;
+    font-family:Arial;
+    background:radial-gradient(circle,#120022,#000);
+    color:white;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+}
+
+/* ---------- LAYOUT ---------- */
+
+.wrapper{
+    text-align:center;
+    padding:25px;
+    border-radius:20px;
+    background:linear-gradient(180deg,#1b0033,#0a0015);
+    box-shadow:0 0 60px #ff00ff40;
+}
+
+h1{
+    color:#ffd700;
+    text-shadow:0 0 15px gold;
+}
+
+#grid{
+    margin:25px auto;
+    display:grid;
+    grid-template-columns:repeat(4,85px);
+    grid-template-rows:repeat(4,85px);
+    gap:12px;
+}
+
+/* ---------- CELLS ---------- */
+
+.cell{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-size:48px;
+    border-radius:14px;
+    background:linear-gradient(180deg,#2a003d,#150020);
+    box-shadow:inset 0 0 10px #000, 0 0 6px #ff00ff30;
+    transition:transform .12s linear;
+}
+
+.win{
+    animation:flash .45s infinite;
+}
+@keyframes flash{
+    0%,100%{box-shadow:0 0 10px gold;}
+    50%{box-shadow:0 0 35px gold;}
+}
+
+/* ---------- BUTTONS ---------- */
+
+button{
+    padding:10px 22px;
+    border:none;
+    border-radius:10px;
+    font-weight:bold;
+    cursor:pointer;
+    margin:5px;
+}
+
 .spin{background:#00ffe7;}
-.home{background:#ff5555;}
 .bonus{background:#ff9900;}
-.stats{margin-top:10px;font-size:18px;}
-.winText{font-size:28px;margin:10px 0;color:#ff0;text-shadow:0 0 15px #ff0;}
-label{font-size:16px;margin-right:5px;}
-input[type=number]{width:80px;padding:5px;border-radius:5px;border:none;text-align:center;}
-.bonus-bg{position:absolute;inset:0;background:radial-gradient(circle,#330066,#110011);z-index:-1;border-radius:15px;opacity:0;transition:opacity 0.5s;}
-.bonus-bg.active{opacity:0.7;}
+.home{background:#ff5555;}
+
+input{
+    width:90px;
+    padding:6px;
+    border-radius:6px;
+    border:none;
+    text-align:center;
+}
+
+/* ---------- BONUS MODE ---------- */
+
+.bonusMode{
+    background:radial-gradient(circle,#440066,#110011);
+    box-shadow:0 0 80px #ff00ff;
+}
+
+/* ---------- TEXT ---------- */
+
+.winText{
+    font-size:26px;
+    height:32px;
+    margin:8px;
+    color:#ffe600;
+    text-shadow:0 0 15px #ffe600;
+}
+
+.stats{
+    margin-top:10px;
+}
 </style>
 </head>
 <body>
-<div class="wrapper">
-<h1>🏰 Rybergs Slott 4x4</h1>
-<div>
-<label for="bet">Satsning (10–1000 kr):</label>
+
+<div class="wrapper" id="wrapper">
+
+<h1>🏰 Rybergs Slott Deluxe</h1>
+
+Satsning:
 <input type="number" id="bet" value="100" min="10" max="1000">
-</div>
-<div id="grid">
-<div class="bonus-bg" id="bonusBg"></div>
-</div>
+
+<div id="grid"></div>
+
 <div class="winText" id="winText"></div>
-<button class="spin" onclick="startSpin(false)">🎰 Snurra</button>
-<button class="bonus" onclick="buyBonus()">💎 Köp Bonus (10 spins)</button>
+
+<button class="spin" onclick="spin(false)">🎰 Snurra</button>
+<button class="bonus" onclick="buyBonus()">💎 Bonus (10 spins)</button>
 <button class="home" onclick="goHome()">← Tillbaka</button>
-<div class="stats">Pengar: <span id="score">1000</span> kr</div>
+
+<div class="stats">
+Saldo: <span id="money">1000</span> kr
 </div>
+
+</div>
+
 
 <script>
-const gridSize=4;
-const symbols=["💎","👑","🍀","⭐","🗡️","🏰"];
-let grid=[];
-let score=1000;
-let spinning=false;
-let bonusActive=false;
-let bonusSpinsLeft=0;
+const SIZE = 4;
+const symbols = ["💎","👑","🍀","⭐","🏰","🗡️"];
 
-const gridEl=document.getElementById("grid");
-const scoreEl=document.getElementById("score");
-const winTextEl=document.getElementById("winText");
-const betInput=document.getElementById("bet");
-const bonusBg=document.getElementById("bonusBg");
+let grid = [];
+let money = 1000;
+let spinning = false;
 
-// Init grid
-function initGrid(){
-    gridEl.querySelectorAll(".cell").forEach(c=>c.remove());
-    grid=[];
-    for(let r=0;r<gridSize;r++){
+let bonusSpins = 0;
+let bonusMode = false;
+
+const gridEl = document.getElementById("grid");
+const moneyEl = document.getElementById("money");
+const winText = document.getElementById("winText");
+const wrapper = document.getElementById("wrapper");
+
+
+// ---------- INIT ----------
+function createGrid(){
+    gridEl.innerHTML="";
+    for(let r=0;r<SIZE;r++){
         grid[r]=[];
-        for(let c=0;c<gridSize;c++){
-            grid[r][c]=symbols[Math.floor(Math.random()*symbols.length)];
+        for(let c=0;c<SIZE;c++){
             const cell=document.createElement("div");
             cell.className="cell";
-            cell.dataset.row=r;
-            cell.dataset.col=c;
-            cell.textContent=grid[r][c];
+            cell.dataset.r=r;
+            cell.dataset.c=c;
             gridEl.appendChild(cell);
+            grid[r][c]=rand();
         }
     }
+    render();
 }
 
-// Render grid
-function renderGrid(){
-    const cells=document.querySelectorAll(".cell");
-    cells.forEach(cell=>{
-        let r=parseInt(cell.dataset.row);
-        let c=parseInt(cell.dataset.col);
-        cell.textContent=grid[r][c];
-        cell.style.opacity=1;
+function rand(){
+    return symbols[Math.floor(Math.random()*symbols.length)];
+}
+
+function render(){
+    document.querySelectorAll(".cell").forEach(cell=>{
+        const r=cell.dataset.r;
+        const c=cell.dataset.c;
+        cell.textContent = grid[r][c];
+        cell.classList.remove("win");
     });
 }
 
-// Check wins
-function checkWin(){
-    let lines=[];
-    for(let r=0;r<gridSize;r++)
-        if(new Set(grid[r]).size===1 && grid[r][0]!="") lines.push([[r,0],[r,1],[r,2],[r,3]]);
-    for(let c=0;c<gridSize;c++){
-        let col=[grid[0][c],grid[1][c],grid[2][c],grid[3][c]];
-        if(new Set(col).size===1 && col[0]!="") lines.push([[0,c],[1,c],[2,c],[3,c]]);
-    }
-    let d1=[grid[0][0],grid[1][1],grid[2][2],grid[3][3]];
-    if(new Set(d1).size===1 && d1[0]!="") lines.push([[0,0],[1,1],[2,2],[3,3]]);
-    let d2=[grid[0][3],grid[1][2],grid[2][1],grid[3][0]];
-    if(new Set(d2).size===1 && d2[0]!="") lines.push([[0,3],[1,2],[2,1],[3,0]]);
-    return lines;
-}
 
-// Drop symbols smooth
-function dropSymbols(callback){
-    let steps=0;
-    function step(){
-        let moved=false;
-        for(let c=0;c<gridSize;c++){
-            for(let r=gridSize-1;r>0;r--){
-                if(grid[r][c]==="" && grid[r-1][c]!=""){
-                    grid[r][c]=grid[r-1][c];
-                    grid[r-1][c]="";
-                    moved=true;
-                }
-            }
-            if(grid[0][c]===""){grid[0][c]=symbols[Math.floor(Math.random()*symbols.length)]; moved=true;}
+// ---------- SMOOTH DROP (pro feel) ----------
+function dropAnimation(done){
+    let steps = 12;
+    let count = 0;
+
+    function frame(){
+        document.querySelectorAll(".cell").forEach(cell=>{
+            cell.style.transform=`translateY(${(steps-count)*6}px)`;
+        });
+
+        count++;
+        if(count<steps) requestAnimationFrame(frame);
+        else{
+            document.querySelectorAll(".cell").forEach(c=>c.style.transform="translateY(0)");
+            done();
         }
-        renderGrid();
-        steps++;
-        if(moved && steps<20) requestAnimationFrame(step);
-        else callback();
     }
-    requestAnimationFrame(step);
+    frame();
 }
 
-// Single spin
-function startSpin(isBonus){
-    if(spinning) return;
-    let bet=parseInt(betInput.value);
-    if(isNaN(bet)||bet<10) bet=10;
-    if(bet>1000) bet=1000;
-    if(score<bet){alert("Inte tillräckligt med pengar!"); return;}
-    spinning=true;
-    score-=bet; winTextEl.textContent="";
-    if(isBonus){bonusBg.classList.add("active");} else{bonusBg.classList.remove("active");}
 
-    dropSymbols(()=>{
-        const lines=checkWin();
-        let totalWin=0;
-        if(lines.length>0){
-            lines.forEach(line=>{
-                line.forEach(([r,c])=>{
-                    document.querySelector(`.cell[data-row='${r}'][data-col='${c}']`).classList.add("win");
-                });
-                let mult = isBonus ? Math.floor(Math.random()*8)+3 : (Math.random()<0.5?3:5);
-                if(mult<3) mult=3;
-                if(mult>10) mult=10;
-                totalWin+=bet*mult;
+// ---------- WIN CHECK ----------
+function checkWins(){
+    let wins=[];
+
+    for(let r=0;r<SIZE;r++){
+        if(new Set(grid[r]).size===1) wins.push(grid[r].map((_,i)=>[r,i]));
+    }
+
+    for(let c=0;c<SIZE;c++){
+        let col=[grid[0][c],grid[1][c],grid[2][c],grid[3][c]];
+        if(new Set(col).size===1) wins.push([[0,c],[1,c],[2,c],[3,c]]);
+    }
+
+    return wins;
+}
+
+
+// ---------- SPIN ----------
+function spin(isBonus){
+
+    if(spinning) return;
+
+    let bet = parseInt(bet.value);
+    if(money < bet){ alert("Inte tillräckligt!"); return;}
+
+    spinning=true;
+    money -= bet;
+    moneyEl.textContent = money;
+    winText.textContent="";
+
+    // slumpa nya symboler
+    for(let r=0;r<SIZE;r++)
+        for(let c=0;c<SIZE;c++)
+            grid[r][c]=rand();
+
+    dropAnimation(()=>{
+
+        render();
+
+        let wins = checkWins();
+        let totalWin = 0;
+
+        wins.forEach(line=>{
+            line.forEach(([r,c])=>{
+                document.querySelector(`[data-r='${r}'][data-c='${c}']`).classList.add("win");
             });
-            if(isBonus && totalWin<bet*0.2) totalWin=bet*0.2;
-            score+=totalWin;
-            winTextEl.textContent = totalWin>=bet*8?"🎉 MEGA WIN!":(totalWin>=bet*4?"✨ BIG WIN!":"🎉 WIN!");
-        } else if(isBonus){totalWin=bet*0.2; score+=totalWin; winTextEl.textContent="💰 BONUS WIN!";}
-        scoreEl.textContent=score;
+
+            let mult = isBonus
+                ? Math.floor(Math.random()*8)+3   // 3-10x
+                : Math.floor(Math.random()*4)+2;  // 2-5x
+
+            totalWin += bet*mult;
+        });
+
+        if(isBonus && totalWin < bet*0.2)
+            totalWin = bet*0.2;
+
+        money += totalWin;
+        moneyEl.textContent = money;
+
+        if(totalWin >= bet*8) winText.textContent="🎉 MEGA WIN!";
+        else if(totalWin >= bet*4) winText.textContent="✨ BIG WIN!";
+        else if(totalWin>0) winText.textContent="WIN!";
+
         spinning=false;
 
-        // Automatisk bonus spin
-        if(bonusActive && bonusSpinsLeft>0){
-            bonusSpinsLeft--;
-            setTimeout(()=>startSpin(true),800);
-        } else if(bonusActive && bonusSpinsLeft===0){
-            bonusActive=false;
-            bonusBg.classList.remove("active");
+        // BONUS AUTO SPINS
+        if(bonusMode){
+            bonusSpins--;
+            if(bonusSpins>0){
+                setTimeout(()=>spin(true),700);
+            }else{
+                bonusMode=false;
+                wrapper.classList.remove("bonusMode");
+            }
         }
+
     });
 }
 
-// Buy bonus
+
+// ---------- BONUS ----------
 function buyBonus(){
-    let bet=parseInt(betInput.value);
-    if(isNaN(bet)||bet<200){alert("Bonus kräver minst 200 kr satsning!"); return;}
-    if(score<bet){alert("Inte tillräckligt med pengar!"); return;}
-    bonusActive=true;
-    bonusSpinsLeft=10;
-    score-=bet; // köpbonus kostnad
-    startSpin(true);
+    let bet = parseInt(betInput.value || 100);
+    if(bet < 200){ alert("Minst 200 kr för bonus!"); return; }
+
+    bonusMode=true;
+    bonusSpins=10;
+
+    wrapper.classList.add("bonusMode");
+
+    spin(true);
 }
 
-function goHome(){window.location.href="../index.html";}
 
-initGrid();
-renderGrid();
+// ---------- NAV ----------
+function goHome(){
+    window.location.href="../index.html";
+}
+
+
+// ---------- START ----------
+createGrid();
 </script>
+
 </body>
 </html>
