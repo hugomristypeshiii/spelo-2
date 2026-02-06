@@ -17,15 +17,8 @@ body {
     color:white;
 }
 .wrapper { position:relative; text-align:center; }
-h1 {
-    color:#00ffe7;
-    text-shadow:0 0 20px #00ffe7;
-}
-canvas {
-    background:#000;
-    border-radius:20px;
-    box-shadow:0 0 40px #00ffe7;
-}
+h1 { color:#00ffe7; text-shadow:0 0 20px #00ffe7; }
+canvas { background:#000; border-radius:20px; box-shadow:0 0 40px #00ffe7; }
 .ui { margin:10px 0; }
 .overlay {
     position:absolute;
@@ -88,7 +81,7 @@ function init(){
     running = true;
     shootCooldown = 0;
     powerActive = false;
-    difficulty = 1200;
+    difficulty = 1400; // längre intervall → färre asteroider
     scoreEl.textContent = score;
     livesEl.textContent = lives;
     overlay.style.display="none";
@@ -96,7 +89,7 @@ function init(){
 
 // ------------------- SPAWN -------------------
 function spawnAsteroid(){
-    if(asteroids.length >= 6) return;
+    if(asteroids.length >= 4) return; // max 4 asteroider samtidigt
     const size = 25 + Math.random()*20;
     asteroids.push({
         x: Math.random()*(canvas.width-size),
@@ -125,21 +118,20 @@ function spawnPowerup(){
 function drawPlayer(){
     ctx.save();
     ctx.translate(player.x + player.w/2, player.y + player.h/2);
-    // Skepp mer realistiskt polygon + cockpit
     ctx.fillStyle="#00ffe7";
     ctx.shadowBlur=10;
     ctx.shadowColor="#00ffe7";
     ctx.beginPath();
-    ctx.moveTo(0, -player.h/2);             // spets fram
-    ctx.lineTo(-player.w/2, player.h/4);    // vänster bakkant
-    ctx.lineTo(-player.w/6, player.h/4);    // vänster inre
-    ctx.lineTo(-player.w/6, player.h/2);    // vänster motor
-    ctx.lineTo(player.w/6, player.h/2);     // höger motor
-    ctx.lineTo(player.w/6, player.h/4);     // höger inre
-    ctx.lineTo(player.w/2, player.h/4);     // höger bakkant
+    ctx.moveTo(0, -player.h/2);
+    ctx.lineTo(-player.w/2, player.h/4);
+    ctx.lineTo(-player.w/6, player.h/4);
+    ctx.lineTo(-player.w/6, player.h/2);
+    ctx.lineTo(player.w/6, player.h/2);
+    ctx.lineTo(player.w/6, player.h/4);
+    ctx.lineTo(player.w/2, player.h/4);
     ctx.closePath();
     ctx.fill();
-    // cockpit highlight
+    // cockpit
     ctx.fillStyle="#88ffff";
     ctx.beginPath();
     ctx.ellipse(0, -player.h/8, player.w/8, player.h/8, 0, 0, Math.PI*2);
@@ -198,7 +190,7 @@ function update(){
     if(keys["ArrowRight"] || keys["d"]) player.x += player.speed;
     player.x = Math.max(0,Math.min(canvas.width-player.w,player.x));
 
-    bullets.forEach(b=>b.y -=12); // snabbare skott
+    bullets.forEach(b=>b.y -=12);
     bullets = bullets.filter(b=>b.y>-20);
 
     asteroids.forEach(a=> a.y += a.speed);
@@ -218,17 +210,22 @@ function update(){
         });
     });
 
+    // Om asteroider faller förbi spelaren → tappar liv
     asteroids.forEach((a,i)=>{
-        if(a.y + a.h > player.y &&
-           a.x < player.x + player.w &&
-           a.x + a.w > player.x){
+        if(a.y > canvas.height){
+            asteroids.splice(i,1);
+            lives--;
+            livesEl.textContent=lives;
+            if(lives<=0) gameOver();
+        } else if(a.y + a.h > player.y &&
+                  a.x < player.x + player.w &&
+                  a.x + a.w > player.x){
             asteroids.splice(i,1);
             lives--;
             livesEl.textContent=lives;
             if(lives<=0) gameOver();
         }
     });
-    asteroids = asteroids.filter(a => a.y < canvas.height + 50);
 
     powerups.forEach(p=> p.y += p.speed);
     powerups.forEach((p,i)=>{
@@ -273,19 +270,18 @@ function shoot(){
         bullets.push({x:player.x + player.w/2 - 12, y:player.y, w:4, h:10});
         bullets.push({x:player.x + player.w/2 + 8, y:player.y, w:4, h:10});
     }
-    shootCooldown = 7; // snabbare skott
+    shootCooldown = 7;
 }
 
 function gameOver(){ running=false; overlay.style.display="flex"; }
 function restart(){ init(); }
 
-// ------------------- INPUT -------------------
 document.addEventListener("keydown", e=>{ keys[e.key]=true; if(e.key===" ") shoot(); });
 document.addEventListener("keyup", e=> keys[e.key]=false);
 
 // ------------------- SPAWN INTERVALL -------------------
 setInterval(()=>spawnAsteroid(), difficulty);
-setInterval(()=>{ if(Math.random()<0.3) spawnPowerup(); }, 6000);
+setInterval(()=>spawnPowerup(), 4000); // fler power-ups oftare
 
 init();
 loop();
