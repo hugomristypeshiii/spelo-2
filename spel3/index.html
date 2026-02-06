@@ -7,56 +7,77 @@
 <style>
 body{
     margin:0;
-    background:radial-gradient(circle,#140022,#000);
     font-family:Arial;
-    color:white;
+    background:radial-gradient(circle,#140022,#000);
     display:flex;
     justify-content:center;
     align-items:center;
     height:100vh;
+    color:white;
 }
 
+/* PERFEKT CENTER */
 .wrapper{
-    padding:40px;
-    border-radius:25px;
-    background:#120018;
-    box-shadow:0 0 70px #ff00ff30;
+    width:460px;
+    padding:45px;
+    border-radius:28px;
     text-align:center;
-    width:420px;
+    background:#14001d;
+    box-shadow:0 0 90px #ff00ff40;
 }
 
+/* TITLE */
 h1{
-    margin-top:25px;
+    margin:20px 0 30px;
     color:gold;
-    text-shadow:0 0 12px gold;
+    text-shadow:0 0 15px gold;
 }
 
 /* GRID */
 #grid{
     display:grid;
-    grid-template-columns:repeat(4,80px);
-    grid-template-rows:repeat(4,80px);
+    grid-template-columns:repeat(4,85px);
+    grid-template-rows:repeat(4,85px);
     gap:12px;
     margin:25px auto;
 }
 
+/* SYMBOL */
 .cell{
     display:flex;
     justify-content:center;
     align-items:center;
-    font-size:46px;
-    border-radius:14px;
-    background:linear-gradient(#2b003b,#150020);
-    transition:transform .2s ease, opacity .2s;
+    font-size:48px;
+    border-radius:16px;
+    background:linear-gradient(#2b003b,#160022);
+    transition:transform .2s, opacity .2s;
 }
 
+/* EXPLOSION */
 .win{
-    animation:flash .35s infinite;
+    animation:explode .45s ease forwards;
 }
-@keyframes flash{
-    50%{transform:scale(1.2); box-shadow:0 0 25px gold;}
+@keyframes explode{
+    0%{transform:scale(1);}
+    50%{transform:scale(1.5); opacity:.3;}
+    100%{opacity:0;}
 }
 
+/* BIG WIN TEXT */
+.winText{
+    height:36px;
+    font-size:26px;
+    font-weight:bold;
+}
+
+.mega{
+    animation:mega .6s infinite;
+}
+@keyframes mega{
+    50%{transform:scale(1.2); text-shadow:0 0 30px gold;}
+}
+
+/* BUTTONS */
 button{
     padding:10px 20px;
     margin:6px;
@@ -70,16 +91,13 @@ button{
 .bonus{background:#ff9900;}
 .home{background:#ff5555;}
 
-.winText{height:30px;color:#ffe600;font-size:22px;}
-.multText{height:22px;color:#ff80ff;}
-.bonusInfo{height:22px;color:#ff66ff;font-weight:bold;}
-
 .bonusMode{
-    background:radial-gradient(circle,#3b0057,#110011);
-    box-shadow:0 0 90px #ff00ff;
+    box-shadow:0 0 120px #ff00ff;
+    background:radial-gradient(circle,#3a0057,#110011);
 }
 </style>
 </head>
+
 <body>
 
 <div class="wrapper" id="wrapper">
@@ -91,12 +109,12 @@ Satsning:
 
 <div id="grid"></div>
 
-<div class="winText" id="winText"></div>
-<div class="multText" id="multText"></div>
-<div class="bonusInfo" id="bonusInfo"></div>
+<div id="winText" class="winText"></div>
+<div id="multText"></div>
+<div id="bonusInfo"></div>
 
 <button class="spin" onclick="spin()">🎰 Snurra</button>
-<button class="bonus" onclick="buyBonus()">💎 Bonus (10 spins)</button>
+<button class="bonus" onclick="buyBonus()">💎 Köp Bonus</button>
 <button class="home" onclick="goHome()">← Tillbaka</button>
 
 <div>Saldo: <span id="money">1000</span> kr</div>
@@ -105,7 +123,7 @@ Satsning:
 
 <script>
 const SIZE=4;
-const symbols=["💎","👑","🍀","⭐","🏰","🗡️"];
+const symbols=["💎","👑","🍀","⭐","🏰","🔥","🧿"]; // 🔥 wild, 🧿 scatter
 
 let grid=[];
 let money=1000;
@@ -120,8 +138,8 @@ const bonusInfo=document.getElementById("bonusInfo");
 const wrapper=document.getElementById("wrapper");
 const betInput=document.getElementById("betInput");
 
+function rand(){ return symbols[Math.floor(Math.random()*symbols.length)]; }
 
-// ---------- INIT ----------
 function createGrid(){
     gridEl.innerHTML="";
     for(let r=0;r<SIZE;r++){
@@ -138,34 +156,23 @@ function createGrid(){
     render();
 }
 
-function rand(){
-    return symbols[Math.floor(Math.random()*symbols.length)];
-}
-
 function render(){
     document.querySelectorAll(".cell").forEach(cell=>{
-        let r=cell.dataset.r;
-        let c=cell.dataset.c;
+        let r=cell.dataset.r,c=cell.dataset.c;
         cell.textContent=grid[r][c];
         cell.classList.remove("win");
         cell.style.opacity=1;
-        cell.style.transform="translateY(0)";
     });
 }
 
-
-// ---------- REEL SPIN ANIMATION ----------
-function animateSpin(duration, done){
+/* reel animation */
+function animateSpin(speed,done){
     let cells=document.querySelectorAll(".cell");
     let start=Date.now();
 
     function frame(){
-        let t=(Date.now()-start)/duration;
-
-        cells.forEach(c=>{
-            c.style.transform=`translateY(${Math.sin(t*15)*20}px)`;
-        });
-
+        let t=(Date.now()-start)/speed;
+        cells.forEach(c=>c.style.transform=`translateY(${Math.sin(t*12)*22}px)`);
         if(t<1) requestAnimationFrame(frame);
         else{
             cells.forEach(c=>c.style.transform="translateY(0)");
@@ -175,41 +182,34 @@ function animateSpin(duration, done){
     frame();
 }
 
-
-// ---------- WIN CHECK ----------
 function checkWins(){
     let lines=[];
-    for(let r=0;r<SIZE;r++)
-        if(new Set(grid[r]).size===1)
-            lines.push(grid[r].map((_,i)=>[r,i]));
+
+    for(let r=0;r<SIZE;r++){
+        let row=grid[r];
+        if(row.every(x=>x===row[0]||x==="🔥"))
+            lines.push(row.map((_,i)=>[r,i]));
+    }
 
     for(let c=0;c<SIZE;c++){
         let col=[grid[0][c],grid[1][c],grid[2][c],grid[3][c]];
-        if(new Set(col).size===1)
+        if(col.every(x=>x===col[0]||x==="🔥"))
             lines.push([[0,c],[1,c],[2,c],[3,c]]);
     }
+
     return lines;
 }
 
-
-// ---------- CASCADE ----------
 function cascade(){
     for(let c=0;c<SIZE;c++){
         let col=[];
-        for(let r=0;r<SIZE;r++)
-            if(grid[r][c]!="") col.push(grid[r][c]);
-
+        for(let r=0;r<SIZE;r++) if(grid[r][c]!="") col.push(grid[r][c]);
         while(col.length<SIZE) col.unshift(rand());
-
-        for(let r=0;r<SIZE;r++)
-            grid[r][c]=col[r];
+        for(let r=0;r<SIZE;r++) grid[r][c]=col[r];
     }
 }
 
-
-// ---------- SPIN ----------
 function spin(){
-
     if(spinning) return;
     spinning=true;
 
@@ -219,10 +219,9 @@ function spin(){
     money-=bet;
     moneyEl.textContent=money;
 
-    let spinSpeed = bonusSpins>0 ? 1600 : 1100;
+    let speed=bonusSpins>0?1800:1200;
 
-    animateSpin(spinSpeed,()=>{
-
+    animateSpin(speed,()=>{
         for(let r=0;r<SIZE;r++)
             for(let c=0;c<SIZE;c++)
                 grid[r][c]=rand();
@@ -231,28 +230,26 @@ function spin(){
     });
 }
 
-
-// ---------- WIN PROCESS ----------
 function processWins(bet){
-
     render();
 
     let wins=checkWins();
-    let totalWin=0;
-    let mults=[];
+    let scatters=grid.flat().filter(x=>x==="🧿").length;
+
+    if(scatters>=3 && bonusSpins===0){
+        bonusSpins=10;
+        wrapper.classList.add("bonusMode");
+    }
 
     if(wins.length===0){
         finishSpin();
         return;
     }
 
+    let total=0;
     wins.forEach(line=>{
-        let mult = bonusSpins>0
-            ? Math.floor(Math.random()*8)+3
-            : Math.floor(Math.random()*4)+2;
-
-        mults.push("x"+mult);
-        totalWin+=bet*mult;
+        let mult=bonusSpins>0?Math.floor(Math.random()*8)+3:Math.floor(Math.random()*4)+2;
+        total+=bet*mult;
 
         line.forEach(([r,c])=>{
             grid[r][c]="";
@@ -260,34 +257,30 @@ function processWins(bet){
         });
     });
 
-    if(bonusSpins>0 && totalWin<bet*0.2)
-        totalWin=bet*0.2;
-
-    money+=totalWin;
+    money+=total;
     moneyEl.textContent=money;
 
-    winText.textContent = totalWin>=bet*8 ? "🎉 MEGA WIN!" :
-                           totalWin>=bet*4 ? "✨ BIG WIN!" : "WIN!";
-
-    multText.textContent=mults.join("  ");
+    if(total>=bet*8){
+        winText.textContent="🎉 MEGA WIN!";
+        winText.classList.add("mega");
+    }
+    else if(total>=bet*4) winText.textContent="✨ BIG WIN!";
+    else winText.textContent="WIN!";
 
     setTimeout(()=>{
+        winText.classList.remove("mega");
         cascade();
         processWins(bet);
-    },400);
+    },500);
 }
 
-
-// ---------- FINISH ----------
 function finishSpin(){
     spinning=false;
 
     if(bonusSpins>0){
         bonusSpins--;
         bonusInfo.textContent="BONUS: "+bonusSpins+" kvar";
-
-        if(bonusSpins>0)
-            setTimeout(spin,900);
+        if(bonusSpins>0) setTimeout(spin,1000);
         else{
             wrapper.classList.remove("bonusMode");
             bonusInfo.textContent="";
@@ -295,20 +288,14 @@ function finishSpin(){
     }
 }
 
-
-// ---------- BONUS ----------
 function buyBonus(){
     let bet=parseInt(betInput.value)||100;
     if(bet<200) return;
-
     bonusSpins=10;
     wrapper.classList.add("bonusMode");
-    bonusInfo.textContent="BONUS: 10 kvar";
     spin();
 }
 
-
-// ---------- NAV ----------
 function goHome(){
     window.location.href="../index.html";
 }
