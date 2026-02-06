@@ -17,10 +17,7 @@ body {
     color:white;
 }
 
-.wrapper {
-    position:relative;
-    text-align:center;
-}
+.wrapper { position:relative; text-align:center; }
 
 h1 {
     color:#00ffe7;
@@ -33,9 +30,7 @@ canvas {
     box-shadow:0 0 40px #00ffe7;
 }
 
-.ui {
-    margin:10px 0;
-}
+.ui { margin:10px 0; }
 
 .overlay {
     position:absolute;
@@ -100,7 +95,7 @@ function init(){
     running = true;
     shootCooldown = 0;
     powerActive = false;
-    difficulty = 1000; // längre intervall = färre asteroider
+    difficulty = 1200; // längre intervall = färre asteroider
     scoreEl.textContent = score;
     livesEl.textContent = lives;
     overlay.style.display="none";
@@ -108,13 +103,14 @@ function init(){
 
 // ------------------- SPAWN -------------------
 function spawnAsteroid(){
+    if(asteroids.length >= 6) return; // max 6 asteroider samtidigt
     const size = 25 + Math.random()*20;
     asteroids.push({
         x: Math.random()*(canvas.width-size),
         y: -size,
         w: size,
         h: size,
-        speed: 1 + Math.random()*1.5 + score/400, // långsammare ökning
+        speed: 1 + Math.random()*1.5 + score/500,
         rotation: Math.random()*Math.PI*2,
         rotationSpeed: (Math.random()-0.5)*0.03
     });
@@ -128,7 +124,7 @@ function spawnPowerup(){
         w: size,
         h: size,
         type: Math.random()<0.5 ? "doubleShot" : "fastShot",
-        speed: 2
+        speed: 1.5
     });
 }
 
@@ -176,7 +172,16 @@ function drawAsteroid(a){
 }
 
 function drawPowerup(p){
-    ctx.fillStyle = p.type==="doubleShot"?"#ffeb3b":"#00ff00";
+    // mer realistiska powerups med gradient
+    const grad = ctx.createRadialGradient(p.x+p.w/2, p.y+p.h/2, 2, p.x+p.w/2, p.y+p.h/2, p.w/2);
+    if(p.type==="doubleShot"){
+        grad.addColorStop(0,"#fff176");
+        grad.addColorStop(1,"#fbc02d");
+    } else {
+        grad.addColorStop(0,"#81c784");
+        grad.addColorStop(1,"#388e3c");
+    }
+    ctx.fillStyle = grad;
     ctx.beginPath();
     ctx.arc(p.x + p.w/2, p.y + p.h/2, p.w/2, 0, Math.PI*2);
     ctx.fill();
@@ -203,8 +208,8 @@ function update(){
                 bullets.splice(bi,1);
                 score += 10;
                 scoreEl.textContent = score;
-                if(score % 100 === 0 && difficulty > 400){
-                    difficulty -= 30; // svårare långsammare
+                if(score % 100 === 0 && difficulty > 500){
+                    difficulty -= 20;
                 }
             }
         });
@@ -272,18 +277,11 @@ function shoot(){
     shootCooldown = 15;
 }
 
-function gameOver(){
-    running=false;
-    overlay.style.display="flex";
-}
-
-function restart(){init();}
+function gameOver(){ running=false; overlay.style.display="flex"; }
+function restart(){ init(); }
 
 // ------------------- INPUT -------------------
-document.addEventListener("keydown", e=>{
-    keys[e.key]=true;
-    if(e.key===" ") shoot();
-});
+document.addEventListener("keydown", e=>{ keys[e.key]=true; if(e.key===" ") shoot(); });
 document.addEventListener("keyup", e=> keys[e.key]=false);
 
 // ------------------- SPAWN INTERVALL -------------------
