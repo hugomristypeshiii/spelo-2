@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🏰 Rybergs Slott 4x4 - Gravitation & Multipliers</title>
+<title>🏰 Rybergs Slott 4x4 - Naturally Falling</title>
 <style>
 body{
     margin:0;
@@ -44,7 +44,7 @@ h1{
     justify-content:center;
     align-items:center;
     font-size:40px;
-    transition: all 0.3s ease;
+    transition: transform 0.2s ease, background 0.2s ease;
 }
 .win{
     animation: flash 0.5s ease infinite;
@@ -99,6 +99,7 @@ const winTextEl = document.getElementById("winText");
 let score = 1000;
 let highscore = parseInt(localStorage.getItem("slotHigh")) || score;
 highEl.textContent = highscore;
+let spinning = false;
 
 // ===== Init grid =====
 function initGrid(){
@@ -107,45 +108,18 @@ function initGrid(){
     for(let r=0;r<gridSize;r++){
         grid[r]=[];
         for(let c=0;c<gridSize;c++){
-            grid[r][c]="";
+            grid[r][c]=symbols[Math.floor(Math.random()*symbols.length)];
             const cell = document.createElement("div");
             cell.className="cell";
             cell.dataset.row=r;
             cell.dataset.col=c;
+            cell.textContent=grid[r][c];
             gridEl.appendChild(cell);
         }
     }
 }
 
-// ===== Animate fall =====
-function dropSymbols(callback){
-    let maxSteps = gridSize;
-    let step = 0;
-
-    function stepDrop(){
-        for(let r=gridSize-1;r>=0;r--){
-            for(let c=0;c<gridSize;c++){
-                if(grid[r][c]===""){
-                    for(let rr=r-1;rr>=0;rr--){
-                        if(grid[rr][c]!==""){
-                            grid[r][c]=grid[rr][c];
-                            grid[rr][c]="";
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-        renderGrid();
-        step++;
-        if(step<maxSteps){
-            requestAnimationFrame(stepDrop);
-        } else callback();
-    }
-    stepDrop();
-}
-
-// ===== Render =====
+// ===== Render grid =====
 function renderGrid(){
     const cells = document.querySelectorAll(".cell");
     cells.forEach(cell=>{
@@ -176,23 +150,50 @@ function checkWin(){
     return lines;
 }
 
-// ===== Spin =====
+// ===== Drop symbols naturally =====
+function dropSymbols(callback){
+    let changed = true;
+    function step(){
+        changed=false;
+        for(let c=0;c<gridSize;c++){
+            for(let r=gridSize-1;r>0;r--){
+                if(grid[r][c]==="" && grid[r-1][c]!==""){
+                    grid[r][c]=grid[r-1][c];
+                    grid[r-1][c]="";
+                    changed=true;
+                }
+            }
+            if(grid[0][c]===""){
+                grid[0][c]=symbols[Math.floor(Math.random()*symbols.length)];
+                changed=true;
+            }
+        }
+        renderGrid();
+        if(changed){
+            setTimeout(step,150);
+        } else {
+            callback();
+        }
+    }
+    step();
+}
+
+// ===== Spin function =====
 function spin(){
+    if(spinning) return; // block multiple clicks
     if(score<100){
         alert("Inte tillräckligt med pengar!");
         return;
     }
-    score -=100;
+    spinning=true;
+    score-=100;
     winTextEl.textContent="";
-
-    // fyll tomma rutor med nya symboler
+    // Clear grid (set to empty for animation)
     for(let r=0;r<gridSize;r++){
         for(let c=0;c<gridSize;c++){
-            if(grid[r][c]==="") grid[r][c]=symbols[Math.floor(Math.random()*symbols.length)];
+            grid[r][c]="";
         }
     }
-
-    // drop animation
     dropSymbols(()=>{
         const winLines = checkWin();
         let totalWin = 0;
@@ -202,14 +203,11 @@ function spin(){
                 line.forEach(([r,c])=>{
                     document.querySelector(`.cell[data-row='${r}'][data-col='${c}']`).classList.add("win");
                 });
-                // multipliers 3x eller 5x slumpmässigt
+                // slumpmässig multiplier 3x eller 5x
                 let multiplier = Math.random()<0.5?3:5;
                 totalWin += 100*multiplier;
             });
-
-            score += totalWin;
-
-            // Visa Mega Win/Big Win
+            score+=totalWin;
             if(totalWin>=400) winTextEl.textContent="🎉 MEGA WIN!";
             else if(totalWin>=200) winTextEl.textContent="✨ BIG WIN!";
             else winTextEl.textContent="🎉 WIN!";
@@ -220,6 +218,7 @@ function spin(){
             highEl.textContent=highscore;
             localStorage.setItem("slotHigh",highscore);
         }
+        spinning=false;
     });
 }
 
