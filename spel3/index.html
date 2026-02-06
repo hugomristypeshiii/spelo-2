@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🏰 Rybergs Slott 4x4 - Naturally Falling</title>
+<title>🏰 Rybergs Slott 4x4 - Clean & Adjustable Bet</title>
 <style>
 body{
     margin:0;
@@ -17,10 +17,9 @@ body{
 }
 .wrapper{
     text-align:center;
-    background:#111;
+    background:transparent;
     padding:20px;
     border-radius:20px;
-    box-shadow:0 0 30px #ff00cc;
 }
 h1{
     color:#ffd700;
@@ -31,27 +30,21 @@ h1{
     display:grid;
     grid-template-columns: repeat(4, 80px);
     grid-template-rows: repeat(4, 80px);
-    gap:5px;
+    gap:15px;
     justify-content:center;
     margin:20px 0;
 }
 .cell{
-    width:80px;
-    height:80px;
-    background:#222;
-    border-radius:8px;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    font-size:40px;
-    transition: transform 0.2s ease, background 0.2s ease;
+    font-size:50px;
+    text-align:center;
+    transition: transform 0.2s ease;
 }
 .win{
     animation: flash 0.5s ease infinite;
 }
 @keyframes flash{
-    0%,100%{background:#222;}
-    50%{background:gold;}
+    0%,100%{text-shadow:none;}
+    50%{text-shadow:0 0 15px gold;}
 }
 button{
     padding:10px 20px;
@@ -73,14 +66,31 @@ button{
     color:#ff0;
     text-shadow:0 0 15px #ff0;
 }
+label{
+    font-size:16px;
+    margin-right:5px;
+}
+input[type=number]{
+    width:80px;
+    padding:5px;
+    border-radius:5px;
+    border:none;
+    text-align:center;
+}
 </style>
 </head>
 <body>
 <div class="wrapper">
     <h1>🏰 Rybergs Slott 4x4</h1>
+
+    <div>
+        <label for="bet">Satsning (10-1000 kr):</label>
+        <input type="number" id="bet" value="100" min="10" max="1000">
+    </div>
+
     <div id="grid"></div>
     <div class="winText" id="winText"></div>
-    <button class="spin" onclick="spin()">🎰 Snurra (Satsa 100 kr)</button>
+    <button class="spin" onclick="spin()">🎰 Snurra</button>
     <button class="home" onclick="goHome()">← Tillbaka</button>
     <div class="stats">
         Pengar: <span id="score">1000</span> kr |
@@ -96,6 +106,7 @@ const gridEl = document.getElementById("grid");
 const scoreEl = document.getElementById("score");
 const highEl = document.getElementById("highscore");
 const winTextEl = document.getElementById("winText");
+const betInput = document.getElementById("bet");
 let score = 1000;
 let highscore = parseInt(localStorage.getItem("slotHigh")) || score;
 highEl.textContent = highscore;
@@ -180,32 +191,38 @@ function dropSymbols(callback){
 
 // ===== Spin function =====
 function spin(){
-    if(spinning) return; // block multiple clicks
-    if(score<100){
+    if(spinning) return;
+    let bet = parseInt(betInput.value);
+    if(isNaN(bet) || bet<10) bet=10;
+    if(bet>1000) bet=1000;
+
+    if(score<bet){
         alert("Inte tillräckligt med pengar!");
         return;
     }
+
     spinning=true;
-    score-=100;
+    score-=bet;
     winTextEl.textContent="";
-    // Clear grid (set to empty for animation)
+
+    // Clear grid for animation
     for(let r=0;r<gridSize;r++){
         for(let c=0;c<gridSize;c++){
             grid[r][c]="";
         }
     }
+
     dropSymbols(()=>{
         const winLines = checkWin();
         let totalWin = 0;
         if(winLines.length>0){
             winLines.forEach(line=>{
-                // markera vinstrad
                 line.forEach(([r,c])=>{
                     document.querySelector(`.cell[data-row='${r}'][data-col='${c}']`).classList.add("win");
                 });
-                // slumpmässig multiplier 3x eller 5x
+                // Multipliers: 3x eller 5x slumpmässigt
                 let multiplier = Math.random()<0.5?3:5;
-                totalWin += 100*multiplier;
+                totalWin += bet*multiplier;
             });
             score+=totalWin;
             if(totalWin>=400) winTextEl.textContent="🎉 MEGA WIN!";
