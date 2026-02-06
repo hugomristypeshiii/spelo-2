@@ -3,104 +3,37 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🏰 Rybergs Slott - Pro Bonus Edition</title>
+<title>🏰 Rybergs Slott - Slot</title>
 <style>
-body {
-    margin:0;
-    font-family: Arial, sans-serif;
-    background: radial-gradient(circle,#0a0015,#000);
-    color:white;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    height:100vh;
-    overflow:hidden;
-}
-.wrapper {
-    text-align:center;
-    padding:20px;
-    position:relative;
-}
-h1{
-    color:#ffd700;
-    text-shadow:0 0 15px #ffd700;
-}
-#grid{
-    display:grid;
-    grid-template-columns:repeat(4,80px);
-    grid-template-rows:repeat(4,80px);
-    gap:15px;
-    justify-content:center;
-    margin:20px 0;
-    position:relative;
-}
-.cell{
-    font-size:50px;
-    text-align:center;
-    transition: transform 0.3s ease;
-    opacity:1;
-}
-.win{
-    animation: flash 0.5s ease infinite;
-}
-@keyframes flash{
-    0%,100%{text-shadow:none;}
-    50%{text-shadow:0 0 15px gold;}
-}
-button{
-    padding:10px 20px;
-    margin:5px;
-    border:none;
-    border-radius:10px;
-    font-weight:bold;
-    cursor:pointer;
-}
+body{margin:0;font-family:Arial;background:radial-gradient(circle,#0a0015,#000);color:white;display:flex;justify-content:center;align-items:center;height:100vh;}
+.wrapper{text-align:center;padding:20px;position:relative;}
+h1{color:#ffd700;text-shadow:0 0 15px #ffd700;}
+#grid{display:grid;grid-template-columns:repeat(4,80px);grid-template-rows:repeat(4,80px);gap:15px;justify-content:center;margin:20px 0;position:relative;}
+.cell{font-size:50px;text-align:center;transition:transform 0.3s ease;opacity:1;}
+.win{animation: flash 0.5s ease infinite;}
+@keyframes flash{0%,100%{text-shadow:none;}50%{text-shadow:0 0 15px gold;}}
+button{padding:10px 20px;margin:5px;border:none;border-radius:10px;font-weight:bold;cursor:pointer;}
 .spin{background:#00ffe7;}
 .home{background:#ff5555;}
 .bonus{background:#ff9900;}
 .stats{margin-top:10px;font-size:18px;}
-.winText{
-    font-size:28px;
-    margin:10px 0;
-    color:#ff0;
-    text-shadow:0 0 15px #ff0;
-}
-label{
-    font-size:16px;
-    margin-right:5px;
-}
-input[type=number]{
-    width:80px;
-    padding:5px;
-    border-radius:5px;
-    border:none;
-    text-align:center;
-}
-.bonus-bg{
-    position:absolute;
-    inset:0;
-    background:radial-gradient(circle,#330066,#110011);
-    z-index:-1;
-    border-radius:15px;
-    opacity:0;
-    transition: opacity 0.5s;
-}
+.winText{font-size:28px;margin:10px 0;color:#ff0;text-shadow:0 0 15px #ff0;}
+label{font-size:16px;margin-right:5px;}
+input[type=number]{width:80px;padding:5px;border-radius:5px;border:none;text-align:center;}
+.bonus-bg{position:absolute;inset:0;background:radial-gradient(circle,#330066,#110011);z-index:-1;border-radius:15px;opacity:0;transition:opacity 0.5s;}
 .bonus-bg.active{opacity:0.7;}
 </style>
 </head>
 <body>
 <div class="wrapper">
 <h1>🏰 Rybergs Slott 4x4</h1>
-
 <div>
 <label for="bet">Satsning (10–1000 kr):</label>
 <input type="number" id="bet" value="100" min="10" max="1000">
 </div>
-
 <div id="grid">
-    <div class="bonus-bg" id="bonusBg"></div>
+<div class="bonus-bg" id="bonusBg"></div>
 </div>
-
 <div class="winText" id="winText"></div>
 <button class="spin" onclick="startSpin(false)">🎰 Snurra</button>
 <button class="bonus" onclick="buyBonus()">💎 Köp Bonus (10 spins)</button>
@@ -148,6 +81,7 @@ function renderGrid(){
         let r=parseInt(cell.dataset.row);
         let c=parseInt(cell.dataset.col);
         cell.textContent=grid[r][c];
+        cell.style.opacity=1;
     });
 }
 
@@ -221,8 +155,14 @@ function startSpin(isBonus){
         scoreEl.textContent=score;
         spinning=false;
 
-        if(bonusActive && bonusSpinsLeft>0){bonusSpinsLeft--; setTimeout(()=>startSpin(true),700);}
-        else if(bonusActive && bonusSpinsLeft===0){bonusActive=false; bonusBg.classList.remove("active");}
+        // Automatisk bonus spin
+        if(bonusActive && bonusSpinsLeft>0){
+            bonusSpinsLeft--;
+            setTimeout(()=>startSpin(true),800);
+        } else if(bonusActive && bonusSpinsLeft===0){
+            bonusActive=false;
+            bonusBg.classList.remove("active");
+        }
     });
 }
 
