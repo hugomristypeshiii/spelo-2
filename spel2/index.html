@@ -2,17 +2,17 @@
 <html lang="sv">
 <head>
 <meta charset="UTF-8">
-<title>Space Shooter 🚀</title>
+<title>🚀 Space Shooter</title>
 
 <style>
 body{
     margin:0;
-    background: radial-gradient(circle,#050510,#000);
-    font-family:Arial;
+    background: radial-gradient(circle,#0a0a18,#000);
     display:flex;
     justify-content:center;
     align-items:center;
     height:100vh;
+    font-family:Arial;
     color:white;
 }
 
@@ -28,14 +28,14 @@ canvas{
     position:absolute;
     inset:0;
     display:none;
-    background:rgba(0,0,0,0.85);
+    background:rgba(0,0,0,.85);
     justify-content:center;
     align-items:center;
     flex-direction:column;
 }
 
 button{
-    padding:12px 25px;
+    padding:10px 20px;
     margin-top:10px;
     border:none;
     border-radius:10px;
@@ -69,13 +69,14 @@ Liv: <span id="lives">3</span>
 </div>
 
 <script>
-const c = game;
-const ctx = c.getContext("2d");
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
 
 let player, bullets, asteroids;
-let score=0,lives=3,running=true,cd=0;
-let high = localStorage.getItem("hs")||0;
-highEl.textContent = high;
+let score=0, lives=3, running=true, cooldown=0;
+let high = localStorage.getItem("hs") || 0;
+
+document.getElementById("high").textContent = high;
 
 function init(){
 player={x:190,y:440,w:40,h:40};
@@ -84,6 +85,7 @@ asteroids=[];
 score=0;
 lives=3;
 running=true;
+
 scoreEl.textContent=0;
 livesEl.textContent=3;
 over.style.display="none";
@@ -103,18 +105,16 @@ speed:2
 
 setInterval(spawn,1200);
 
+
+/* COOLARE SKEPP */
 function drawShip(){
 ctx.save();
 ctx.translate(player.x+20,player.y+20);
 
-/* COOLARE SKEPP */
 ctx.fillStyle="#00ffe7";
 ctx.beginPath();
 ctx.moveTo(0,-20);
 ctx.lineTo(-15,15);
-ctx.lineTo(-5,10);
-ctx.lineTo(0,15);
-ctx.lineTo(5,10);
 ctx.lineTo(15,15);
 ctx.closePath();
 ctx.fill();
@@ -131,100 +131,6 @@ ctx.restore();
 }
 
 function update(){
-
 if(!running) return;
 
-if(keys["ArrowLeft"]) player.x-=5;
-if(keys["ArrowRight"]) player.x+=5;
-
-bullets.forEach(b=>b.y-=10);
-bullets=bullets.filter(b=>b.y>-10);
-
-asteroids.forEach(a=>a.y+=a.speed);
-
-/* collisions */
-bullets.forEach((b,bi)=>{
-asteroids.forEach((a,ai)=>{
-if(b.x<a.x+a.size && b.x+4>a.x && b.y<a.y+a.size && b.y+10>a.y){
-a.life--;
-bullets.splice(bi,1);
-if(a.life<=0){
-asteroids.splice(ai,1);
-score+=10;
-scoreEl.textContent=score;
-if(score>high){
-high=score;
-localStorage.setItem("hs",score);
-highEl.textContent=score;
-}
-}
-}
-});
-});
-
-asteroids.forEach((a,i)=>{
-if(a.y>500){
-asteroids.splice(i,1);
-lives--;
-livesEl.textContent=lives;
-if(lives<=0) gameOver();
-}
-});
-
-if(cd>0) cd--;
-}
-
-function draw(){
-ctx.fillStyle="black";
-ctx.fillRect(0,0,420,500);
-
-drawShip();
-
-ctx.fillStyle="pink";
-bullets.forEach(b=>ctx.fillRect(b.x,b.y,4,10));
-
-ctx.fillStyle="gray";
-asteroids.forEach(a=>{
-ctx.beginPath();
-ctx.arc(a.x,a.y,a.size/2,0,6.28);
-ctx.fill();
-});
-}
-
-function loop(){
-update();
-draw();
-requestAnimationFrame(loop);
-}
-
-function shoot(){
-if(cd>0) return;
-bullets.push({x:player.x+18,y:player.y});
-cd=8;
-}
-
-function gameOver(){
-running=false;
-over.style.display="flex";
-}
-
-function restart(){init();}
-
-function goHome(){
-window.location.href="../index.html";
-}
-
-/* controls */
-let keys={};
-document.addEventListener("keydown",e=>{
-keys[e.key]=true;
-if(e.key===" ") shoot();
-});
-document.addEventListener("keyup",e=>keys[e.key]=false);
-
-init();
-loop();
-</script>
-
-</body>
-</html>
+if(keys["ArrowLeft"]()
