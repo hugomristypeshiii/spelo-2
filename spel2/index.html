@@ -7,19 +7,31 @@
 <style>
 body{
     margin:0;
-    overflow:hidden;
     background:black;
     font-family:Arial;
     color:white;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+    flex-direction:column;
 }
 
-canvas{ display:block; }
+/* GAME CONTAINER */
+#gameContainer{
+    position:relative;
+}
 
+canvas{
+    background:linear-gradient(#000015,#000);
+    border:2px solid cyan;
+}
+
+/* UI */
 .ui{
-    position:absolute;
-    top:10px;
-    left:10px;
-    font-size:20px;
+    text-align:center;
+    margin-bottom:10px;
+    font-size:18px;
 }
 
 #gameOverScreen{
@@ -30,7 +42,7 @@ canvas{ display:block; }
     justify-content:center;
     align-items:center;
     flex-direction:column;
-    font-size:48px;
+    font-size:32px;
     opacity:0;
     pointer-events:none;
     transition:.5s;
@@ -42,9 +54,9 @@ canvas{ display:block; }
 }
 
 button{
-    margin-top:20px;
-    padding:10px 20px;
-    font-size:20px;
+    margin-top:15px;
+    padding:8px 18px;
+    font-size:16px;
     cursor:pointer;
 }
 </style>
@@ -52,36 +64,34 @@ button{
 
 <body>
 
-<canvas id="game"></canvas>
-
 <div class="ui">
-    ❤️ Liv: <span id="livesDisplay"></span><br>
-    ⭐ Poäng: <span id="scoreDisplay">0</span><br>
+    ❤️ Liv: <span id="livesDisplay"></span> |
+    ⭐ Poäng: <span id="scoreDisplay">0</span> |
     🏆 Highscore: <span id="highscoreDisplay">0</span>
 </div>
 
-<div id="gameOverScreen">
-    GAME OVER
-    <div style="font-size:22px;margin-top:15px">
-        Poäng: <span id="finalScore"></span><br>
-        Highscore: <span id="finalHighscore"></span>
+<div id="gameContainer">
+    <canvas id="game" width="600" height="700"></canvas>
+
+    <div id="gameOverScreen">
+        GAME OVER
+        <div style="font-size:18px;margin-top:10px">
+            Poäng: <span id="finalScore"></span><br>
+            Highscore: <span id="finalHighscore"></span>
+        </div>
+        <button onclick="location.reload()">Spela igen</button>
     </div>
-    <button onclick="location.reload()">Spela igen</button>
 </div>
 
 <script>
 const canvas=document.getElementById("game");
 const ctx=canvas.getContext("2d");
 
-canvas.width=window.innerWidth;
-canvas.height=window.innerHeight;
-
 let score=0;
-let lives=5; // fler liv nu
+let lives=5;
 let gameRunning=true;
 
 let highscore=localStorage.getItem("spaceHighscore") || 0;
-
 document.getElementById("highscoreDisplay").textContent=highscore;
 
 let keys={}, bullets=[], asteroids=[], particles=[];
@@ -89,9 +99,9 @@ let keys={}, bullets=[], asteroids=[], particles=[];
 /* ===== PLAYER ===== */
 const player={
     x:canvas.width/2,
-    y:canvas.height-100,
-    size:25,
-    speed:7
+    y:canvas.height-80,
+    size:20,
+    speed:6
 };
 
 window.addEventListener("keydown",e=>keys[e.key]=true);
@@ -99,23 +109,23 @@ window.addEventListener("keyup",e=>keys[e.key]=false);
 
 window.addEventListener("keydown",e=>{
     if(e.code==="Space" && gameRunning){
-        bullets.push({x:player.x,y:player.y,size:4});
+        bullets.push({x:player.x,y:player.y,size:3});
     }
 });
 
-/* ===== SPAWN ASTEROIDS (easier now) ===== */
+/* ===== ASTEROIDS (easier scale) ===== */
 function spawnAsteroid(){
     if(!gameRunning) return;
     asteroids.push({
         x:Math.random()*canvas.width,
-        y:-40,
-        size:20+Math.random()*20, // mindre
-        speed:1.5+Math.random()*1.5, // långsammare
+        y:-30,
+        size:15+Math.random()*15,
+        speed:1.5+Math.random()*1.5,
         angle:0,
-        rotation:(Math.random()-.5)*0.04
+        rotation:(Math.random()-.5)*0.05
     });
 }
-setInterval(spawnAsteroid,1200); // spawnar långsammare
+setInterval(spawnAsteroid,1200);
 
 /* ===== UPDATE ===== */
 function update(){
@@ -129,7 +139,7 @@ if(keys["ArrowRight"] && player.x<canvas.width)
 
 /* Bullets */
 for(let i=bullets.length-1;i>=0;i--){
-    bullets[i].y-=9;
+    bullets[i].y-=8;
     if(bullets[i].y<0) bullets.splice(i,1);
 }
 
@@ -200,18 +210,18 @@ bullets.forEach(b=>{
 });
 
 /* Asteroids */
+ctx.fillStyle="#777";
 asteroids.forEach(a=>{
     ctx.save();
     ctx.translate(a.x,a.y);
     ctx.rotate(a.angle);
-    ctx.fillStyle="#777";
     ctx.beginPath();
     ctx.arc(0,0,a.size,0,Math.PI*2);
     ctx.fill();
     ctx.restore();
 });
 
-/* Explosion particles */
+/* Explosion */
 ctx.fillStyle="orange";
 particles.forEach(p=>{
     ctx.fillRect(p.x,p.y,3,3);
@@ -220,23 +230,23 @@ particles.forEach(p=>{
 
 /* ===== EXPLOSION ===== */
 function createExplosion(x,y){
-    for(let i=0;i<20;i++){
+    for(let i=0;i<15;i++){
         particles.push({
             x,y,
-            vx:(Math.random()-.5)*5,
-            vy:(Math.random()-.5)*5,
-            life:25
+            vx:(Math.random()-.5)*4,
+            vy:(Math.random()-.5)*4,
+            life:20
         });
     }
 }
 
-/* ===== LIVES DISPLAY ===== */
+/* ===== LIVES ===== */
 function updateLives(){
     document.getElementById("livesDisplay").textContent="❤️".repeat(lives);
 }
 updateLives();
 
-/* ===== GAME LOOP ===== */
+/* ===== LOOP ===== */
 function loop(){
     update();
     draw();
